@@ -1,10 +1,10 @@
-import WaterShed
+from WaterShed
 import Graph
 
 class Main():
   
     def compute_shape(self, file_path, data_dict):
-        shed = WaterShed(file_path, compute_acc=True)
+        shed = WaterShed.WaterSheds(file_path, compute_acc=True)
         
         coordinate = data_dict['coordinate']
         top_left = data_dict['top_left']
@@ -20,7 +20,7 @@ class Main():
             height, 
             point_coord, 
             offset
-        ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
+        ) = Graph.Graph.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
         
         new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
         for down_node in flooded_nodes_down:

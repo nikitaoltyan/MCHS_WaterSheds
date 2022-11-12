@@ -36,7 +36,7 @@ class Main():
         
         main_point = point_coord
         top_left, bottom_right = top_left, bottom_right
-        main_shape = Shed.dem.shape
+        main_shape = shed.dem.shape
 
         y_path, x_path = (top_left[1]-bottom_right[1])/main_shape[0], (bottom_right[0] - top_left[0])/main_shape[1]
 

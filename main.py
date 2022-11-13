@@ -2,6 +2,7 @@ import WaterShed
 import Graph
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
+import numpy as np
 import os
 
 class Main():

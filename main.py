@@ -7,8 +7,22 @@ import os
 
 class Main():
   
+    def __init__(self):
+        self.shed = None
+        
+        
+    def _compute_shed(self, file_path):
+        """Compute shed if it isn't exists
+        """
+        if self.shed == None:
+            self.shed = WaterShed.WaterSheds(tif_path, compute_acc=True)
+            return self.shed
+        else:
+            return self.shed
+  
+  
     def compute_shape(self, tif_path, save_path, data_dict):
-        shed = WaterShed.WaterSheds(tif_path, compute_acc=True)
+        shed = _compute_shed(tif_path)
         
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
@@ -103,10 +117,10 @@ class Main():
             print(f'Generated GeoTIFF: {file_name}')
         except:
             try:
-                os.mkdir(f"{save_path}/{waterpost_name}")
+                os.makedirs(f"{save_path}/{waterpost_name}")
             except:
                 pass
-            os.mkdir(f"{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}")
+            os.makedirs(f"{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}")
             driver.CreateCopy(file_name, grid_data, 0)
             print(f'Generated GeoTIFF in new folder: {file_name}')
 
@@ -121,6 +135,9 @@ class Main():
         # ----------------------------
         print('Tif saved')
         # ----------------------------
+        
+    
+    def compute_shapes(self):
 
         
     def add_fields(self, dst_layer):

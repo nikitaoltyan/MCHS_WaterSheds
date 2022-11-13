@@ -15,14 +15,14 @@ class Main():
         """Compute shed if it isn't exists
         """
         if self.shed == None:
-            self.shed = WaterShed.WaterSheds(tif_path, compute_acc=True)
+            self.shed = WaterShed.WaterSheds(file_path, compute_acc=True)
             return self.shed
         else:
             return self.shed
   
   
     def compute_shape(self, tif_path, save_path, data_dict):
-        shed = _compute_shed(tif_path)
+        shed = self._compute_shed(tif_path)
         
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
@@ -30,7 +30,7 @@ class Main():
         top_left = (int(coordinate[0]), int(coordinate[1])+1)
         bottom_right = (int(coordinate[0])+1, int(coordinate[1]))
         lenth = data_dict['lenth']
-        target_h = data_dict['target_h']
+        target_h = data_dict['wtrdepth']
 
         print('Computing flood for...')
         GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
@@ -137,7 +137,10 @@ class Main():
         # ----------------------------
         
     
-    def compute_shapes(self):
+    def compute_shapes(self, tif_path, save_path, data):
+        for d in data:
+            print(d)
+            self.compute_shape(self, tif_path, save_path, data[d])
 
         
     def add_fields(self, dst_layer):

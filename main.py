@@ -111,18 +111,13 @@ class Main():
         grid_data.SetGeoTransform(getGeoTransform(extent, nlines, ncols))
 
         # Save the file
-        file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}.tif'
+        file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}/{waterpost_name}_{freq_name}.tif'
         try:
+            os.makedirs(f"{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}")
             driver.CreateCopy(file_name, grid_data, 0)
             print(f'Generated GeoTIFF: {file_name}')
         except:
-            try:
-                os.makedirs(f"{save_path}/{waterpost_name}")
-            except:
-                pass
-            os.makedirs(f"{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}")
             driver.CreateCopy(file_name, grid_data, 0)
-            print(f'Generated GeoTIFF in new folder: {file_name}')
 
 
         # Close the file

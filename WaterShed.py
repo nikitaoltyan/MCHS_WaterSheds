@@ -1,3 +1,52 @@
+import sys
+import subprocess
+import os
+from os import path
+
+import numpy as np
+from numpy import unravel_index
+import pandas as pd
+from PIL import Image
+import struct
+from tqdm import tqdm
+import random
+
+import skimage.morphology
+import skimage.measure
+
+import matplotlib.pyplot as plt
+from matplotlib import colors
+from matplotlib.patches import Circle
+import seaborn as sns
+from scipy.stats import mode
+from scipy.ndimage import convolve
+
+from osgeo import gdal
+import ogr, os, osr
+from glob import glob
+
+import networkx as nx
+
+# Try to import pysheds
+try:
+    from pysheds.grid import Grid
+    print('pysheds imported')
+except:
+    print('intalling pysheds')
+    subprocess.check_call([sys.executable, "-m", "pip", "install", 'pysheds'])
+    from pysheds.grid import Grid
+    print('pysheds imported')
+    
+    
+# Upgrade tbb
+print('Upgrading tbb')
+subprocess.check_call([sys.executable, "-m", "pip", "install", '--upgrade', 'tbb'])
+
+# Upgrade numba
+print('Upgrading numba')
+subprocess.check_call([sys.executable, "-m", "pip", "install", '--upgrade', 'numba'])
+    
+
 class WaterSheds():
     
     def __init__(self, 

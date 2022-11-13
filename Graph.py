@@ -1,3 +1,8 @@
+import pandas as pd
+import numpy as np
+import networkx as nx
+from tqdm import tqdm
+
 class Graph():
 
     def __init__(self, dem=None, fdir=None, acc=None, compression=1):

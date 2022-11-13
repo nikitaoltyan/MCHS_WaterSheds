@@ -140,7 +140,7 @@ class Main():
     def compute_shapes(self, tif_path, save_path, data):
         for d in data:
             print(d)
-            self.compute_shape(self, tif_path, save_path, data[d])
+            self.compute_shape(tif_path, save_path, data[d])
 
         
     def add_fields(self, dst_layer):

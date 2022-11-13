@@ -19,6 +19,7 @@ class Main():
         target_h = data_dict['target_h']
 
         print('Computing flood for...')
+        GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
         (shape, 
             flooded_nodes_down, 
             flooded_nodes_up,
@@ -27,7 +28,7 @@ class Main():
             height, 
             point_coord, 
             offset
-        ) = Graph.Graph.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
+        ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
         
         new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
         for down_node in flooded_nodes_down:

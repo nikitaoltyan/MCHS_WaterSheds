@@ -1,5 +1,6 @@
 import WaterShed
 import Graph
+import guard
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
 import numpy as np
@@ -133,11 +134,23 @@ class Main():
         # ----------------------------
         
     
-    def compute_shapes(self, tif_path, save_path, data):
-        for d in data:
-            print(d)
-            self.compute_shape(tif_path, save_path, data[d])
-        self._concat_shapes(data, save_path)
+    def compute_shapes(self, tif_path, save_path, data=None, excel_data_path=None):
+        if excel_data_path != None:
+            # ---- Guard ---- 
+            
+            # ---- Compute ----
+            
+            
+        else:
+            # ---- Guard ---- 
+            guard.data_is_not_none(data)
+            guard.data_contains_values(data)
+            
+            # ---- Compute ----
+            for d in data:
+                print(d)
+                self.compute_shape(tif_path, save_path, data[d])
+            self._concat_shapes(data, save_path)
 
         
     def add_fields(self, dst_layer):
@@ -223,3 +236,12 @@ class Main():
 
         del dst_layer
         del dst_ds
+
+        # ----------------------------
+        print('DONE')
+        # ----------------------------
+        
+        
+        
+        
+        

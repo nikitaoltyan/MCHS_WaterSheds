@@ -180,7 +180,7 @@ class Main():
         srs = osr.SpatialReference()
         srs.ImportFromEPSG(4326)
         dst_layer = dst_ds.CreateLayer(dst_layername, geom_type=ogr.wkbMultiPolygon, srs = srs )
-        add_fields(dst_layer)
+        self.add_fields(dst_layer)
 
         dst_layer_defn = dst_layer.GetLayerDefn()
 

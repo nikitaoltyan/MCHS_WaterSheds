@@ -4,6 +4,7 @@ import Graph
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
 import numpy as np
 import os
+import sys
 
 class Main():
   
@@ -136,6 +137,7 @@ class Main():
         for d in data:
             print(d)
             self.compute_shape(tif_path, save_path, data[d])
+        self._concat_shapes(data, save_path)
 
         
     def add_fields(self, dst_layer):
@@ -159,3 +161,64 @@ class Main():
         dst_layer.CreateField(field_name4)
         dst_layer.CreateField(field_name5)
         dst_layer.CreateField(field_name6)
+
+        
+    def _concat_shapes(self, data, save_path):
+        waterpost_name = list(data.keys())[0]['hsts_id']
+        
+        # this allows GDAL to throw Python Exceptions
+        gdal.UseExceptions()
+        dst_layername = 'result_union'
+        dst_drv = ogr.GetDriverByName("ESRI Shapefile")
+        dst_file = f'{save_path}/{waterpost_name}/{waterpost_name}_{dst_layername}.shp'
+
+        if os.path.exists(dst_file):
+            dst_drv.DeleteDataSource(dst_file)
+
+        dst_ds = dst_drv.CreateDataSource(dst_file)
+        srs = osr.SpatialReference()
+        srs.ImportFromEPSG(4326)
+        dst_layer = dst_ds.CreateLayer(dst_layername, geom_type=ogr.wkbMultiPolygon, srs = srs )
+        add_fields(dst_layer)
+
+        dst_layer_defn = dst_layer.GetLayerDefn()
+
+        tmp_layername = 'temp'
+        mem_drv = ogr.GetDriverByName("MEMORY")
+
+        for file_name, file_data in data.items():
+            print(file_name)
+            waterpost_name = file_data['hsts_id']
+            freq_name = file_data['frequency_name']
+            tmp_ds = mem_drv.CreateDataSource('mem_temp_data')
+            tmp_layer = tmp_ds.CreateLayer(tmp_layername, geom_type=ogr.wkbPolygon, srs = srs )
+
+            raster_file = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}/{file_name}'
+            src_ds = gdal.Open(raster_file, gdal.GA_ReadOnly)
+            srcband = src_ds.GetRasterBand(1)
+            gdal.Polygonize(srcband, srcband, tmp_layer, -1, [], callback=None )
+
+            multi_poly = ogr.Geometry(ogr.wkbMultiPolygon)
+
+            for poly in tmp_layer:
+                multi_poly = multi_poly.Union(poly.geometry())
+
+            out_feature = ogr.Feature(dst_layer_defn)
+            out_feature.SetGeometry(multi_poly)
+
+            out_feature.SetField('region_id', waterpost_name)
+            out_feature.SetField('LAT_Y', file_data['coordinate'][1])
+            out_feature.SetField('LON_X', file_data['coordinate'][0])
+            out_feature.SetField('frequency', file_data['frequency'])
+            out_feature.SetField('wtrdepth', file_data['wtrdepth'])
+            out_feature.SetField('wtrlvltime', file_data['wtrlvltime'])
+
+            dst_layer.CreateFeature(out_feature)
+
+            del out_feature
+            del multi_poly
+            del tmp_layer
+            del tmp_ds
+
+        del dst_layer
+        del dst_ds

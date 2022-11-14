@@ -164,7 +164,8 @@ class Main():
 
         
     def _concat_shapes(self, data, save_path):
-        waterpost_name = list(data.keys())[0]['hsts_id']
+        print('computing shape...')
+        waterpost_name = data[list(data.keys())[0]]['hsts_id']
         
         # this allows GDAL to throw Python Exceptions
         gdal.UseExceptions()

@@ -20,8 +20,11 @@ class Graph():
 
     def compute_height(self, file_path, DEMs_path, min_acc, save_path):
         df = pd.read_csv(file_path, sep=';', decimal=',')
+        df['x_lon_int'] = df['x_lon'].values.astype(int)
+        df['y_lat_int'] = df['y_lat'].values.astype(int)
+        
         # Sort df by x_lon and y_lat for future reduction of DEM computing
-        df.sort_values(['x_lon', 'y_lat'], axis = 0, ascending = True, inplace = True, na_position = "first")
+        df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
         self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'error'])
         x_lon_past, y_lat_past = None, None
@@ -35,8 +38,12 @@ class Graph():
             # Define coordinate of map to download 
             lng_num, lat_num = int(x_lon), int(y_lat)
 
+            # Check if this coordinates weren't calculated
             if (x_lon_past != lng_num) or (y_lat_past != lat_num):
                 x_lon_past, y_lat_past = lng_num, lat_num
+                # Set acc values as None to calulate them later
+                self.acc_slice = None
+                self.acc_Graph = None
 
                 self.tif_pathes = []
                 for i in range(lat_num-1, lat_num+2):
@@ -46,31 +53,40 @@ class Graph():
                         self.tif_pathes.append(f'{DEMs_path}/n{lat}_e{lng}_1arc_v3.tif')
                         
                 # check if files 'exisits'
+                success_list = []
                 for tif_path in self.tif_pathes:
-                    if path.exists("guru99.txt") == False:
+                    if path.exists(tif_path) == False:
                         print(f'{tif_path} is not exist in path {DEMs_path}')
-                        break
+                        success_list.append(False)
 
                 # Download DEM and preprocess it
-                self.compute_DEM(self.tif_pathes, lng_num, lat_num)
+                if len(success_list) == 0:
+                    self.compute_DEM(self.tif_pathes, lng_num, lat_num)
+                else:
+                    # Temporary while I'm thinking what to with others frames DEMs
+                    self.compression = 1
+                    self.acc = None
+                    self.dem = None
+                    self.fdir = None
             
 
             # Calculate Heights
             top_left = (lng_num-1, lat_num+2) if len(self.tif_pathes) == 9 else (lng_num, lat_num+1)
             bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
 
-            height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
-            error = 1 if success == False else 0
-            
-            dct = {
-                'hstation_id': hstation_id, 
-                'x_lon':x_lon, 
-                'y_lat':y_lat, 
-                'height':height, 
-                'error':error
-            }
-            self.df_new = self.df_new.append(dct, ignore_index=True)
-            self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
+            if self.dem != None:
+                height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
+                error = 1 if success == False else 0
+
+                dct = {
+                    'hstation_id': hstation_id, 
+                    'x_lon':x_lon, 
+                    'y_lat':y_lat, 
+                    'height':height, 
+                    'error':error
+                }
+                self.df_new = self.df_new.append(dct, ignore_index=True)
+                self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
 
     
 
@@ -93,9 +109,11 @@ class Graph():
 
 
     def compute_height_differance(self, coordinate, top_left, bottom_right, lenth, min_acc):
-        acc_slice = self.acc.copy()
-        # Filter river cells
-        self.create_acc_graph(acc_slice, self.fdir, min_acc)
+        # In case to not create acc_graph every time for same lon & lat
+        if (self.acc_slice == None) or (self.acc_Graph == None):
+            acc_slice = self.acc.copy()
+            # Filter river cells
+            self.create_acc_graph(acc_slice, self.fdir, min_acc)
 
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         river_pathes_nodes_DOWN, river_pathes_nodes_UP, success = self.compute_river_path(point, lenth)

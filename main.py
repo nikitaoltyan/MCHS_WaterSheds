@@ -244,4 +244,14 @@ class Main():
         
         
         
+    def compute_heights(self, excel_path, DEMs_path, save_path):
+        # ---- Guard ---- 
+        guard.height_data_contains_columns(excel_path)
+          
+        # ---- Compute ----
+        heights_df = GraphClass.compute_height(excel_path, DEMs_path)
+        heights_df.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
         
+        # ----------------------------
+        print('DONE')
+        # ----------------------------

@@ -74,7 +74,7 @@ class Graph():
             top_left = (lng_num-1, lat_num+2) if len(self.tif_pathes) == 9 else (lng_num, lat_num+1)
             bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
 
-            if self.dem is None:
+            if self.dem is not None:
                 height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
                 error = 1 if success == False else 0
 
@@ -110,7 +110,7 @@ class Graph():
 
     def compute_height_differance(self, coordinate, top_left, bottom_right, lenth, min_acc):
         # In case to not create acc_graph every time for same lon & lat
-        if (self.acc_slice is None) or (self.acc_Graph is None):
+        if (self.acc_slice is not None) or (self.acc_Graph is not None):
             acc_slice = self.acc.copy()
             # Filter river cells
             self.create_acc_graph(acc_slice, self.fdir, min_acc)

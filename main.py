@@ -245,7 +245,7 @@ class Main():
         
         
         
-    def compute_heights(self, excel_path, DEMs_path, min_acc=1000, save_path):
+    def compute_heights(self, excel_path, DEMs_path, save_path, min_acc=1000):
         # ---- Guard ---- 
         df = pd.read_csv(excel_path, sep=';', decimal=',')
         guard.height_data_contains_columns(df)

@@ -18,7 +18,7 @@ class Graph():
         self.compression = compression
 
 
-    def compute_height(self, file_path, DEMs_path):
+    def compute_height(self, file_path, DEMs_path, min_acc, save_path):
         df = pd.read_csv(file_path, sep=';', decimal=',')
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon', 'y_lat'], axis = 0, ascending = True, inplace = True, na_position = "first")
@@ -34,10 +34,6 @@ class Graph():
 
             # Define coordinate of map to download 
             lng_num, lat_num = int(x_lon), int(y_lat)
-
-            # check if file 'exisits'
-            if (lat_num >= 60) or (lng_num >= 119):
-                break
 
             if (x_lon_past != lng_num) or (y_lat_past != lat_num):
                 x_lon_past, y_lat_past = lng_num, lat_num
@@ -63,15 +59,18 @@ class Graph():
             top_left = (lng_num-1, lat_num+2) if len(self.tif_pathes) == 9 else (lng_num, lat_num+1)
             bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
 
-            height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000)
+            height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
             error = 1 if success == False else 0
             
             dct = {
-                'hstation_id': hstation_id, 'x_lon':x_lon, 'y_lat':y_lat, 'height':height, 'error':error
+                'hstation_id': hstation_id, 
+                'x_lon':x_lon, 
+                'y_lat':y_lat, 
+                'height':height, 
+                'error':error
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
-      
-        return self.df_new
+            self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
 
     
 
@@ -93,10 +92,10 @@ class Graph():
             self.fdir = shed.fdir
 
 
-    def compute_height_differance(self, coordinate, top_left, bottom_right, lenth):
+    def compute_height_differance(self, coordinate, top_left, bottom_right, lenth, min_acc):
         acc_slice = self.acc.copy()
         # Filter river cells
-        self.create_acc_graph(acc_slice, self.fdir, 2000)
+        self.create_acc_graph(acc_slice, self.fdir, min_acc)
 
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         river_pathes_nodes_DOWN, river_pathes_nodes_UP, success = self.compute_river_path(point, lenth)

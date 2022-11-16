@@ -1,8 +1,13 @@
+import WaterShed
+
 import pandas as pd
 import numpy as np
 from numpy import unravel_index
 import networkx as nx
 from tqdm import tqdm
+from os import path
+
+
 
 class Graph():
 
@@ -13,20 +18,21 @@ class Graph():
         self.compression = compression
 
 
-    def compute_height(self, file_path):
+    def compute_height(self, file_path, DEMs_path):
         df = pd.read_csv(file_path, sep=';', decimal=',')
+        # Sort df by x_lon and y_lat for future reduction of DEM computing
+        df.sort_values(['x_lon', 'y_lat'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
         self.df_new = pd.DataFrame(columns=['OBJECTID_1', 'post_code', 'x_lon', 'y_lat', 'height'])
         x_lon_past, y_lat_past = None, None
 
         for i, row in df.iterrows():
-            print(f'{i+1}/{df.shape[0]} hydroposts')
+            print(f'{i+1}/{df.shape[0]} hydropost...')
             id, post_code  = row[0], row[1]
             x_lon, y_lat = row[2], row[3]
             coordinate = (x_lon, y_lat)
-            print(coordinate)
 
-            # download maps 
+            # Define coordinate of map to download 
             lng_num, lat_num = int(x_lon), int(y_lat)
 
             # check if file 'exisits'
@@ -41,7 +47,13 @@ class Graph():
                     for j in range(lng_num-1, lng_num+2):
                         lat = str(i)
                         lng = ''.join((['0'] + list(str(int(j))))[-3:])
-                        self.tif_pathes.append(f'/content/DEM/n{lat}_e{lng}_1arc_v3.tif')
+                        self.tif_pathes.append(f'{DEMs_path}/n{lat}_e{lng}_1arc_v3.tif')
+                        
+                # check if files 'exisits'
+                for tif_path in self.tif_pathes:
+                    if path.exists("guru99.txt") == False:
+                        print(f'{tif_path} is not exist in path {DEMs_path}'
+                        break
 
                 # Download DEM and preprocess it
                 self.compute_DEM(self.tif_pathes, lng_num, lat_num)
@@ -64,20 +76,20 @@ class Graph():
 
     def compute_DEM(self, pathes, lng_num, lat_num):
         if len(pathes) == 9:
-            WaterShed = WaterSheds(files_pathes=pathes, compute_acc=True, compression=3)
+            shed = WaterShed.WaterSheds(files_pathes=pathes, compute_acc=True, compression=3)
             self.compression = 3
-            self.acc = WaterShed.acc
-            self.dem = WaterShed.dem
-            self.fdir = WaterShed.fdir
+            self.acc = shed.acc
+            self.dem = shed.dem
+            self.fdir = shed.fdir
         else:
             #  Use only central tile
             lat = str(lat_num)
             lng = ''.join((['0'] + list(str(int(lng_num))))[-3:])
-            WaterShed = WaterSheds(file_path=f'n{lat}_e{lng}_1arc_v3.tif', compute_acc=True)
+            shed = WaterShed.WaterSheds(file_path=f'n{lat}_e{lng}_1arc_v3.tif', compute_acc=True)
             self.compression = 1
-            self.acc = WaterShed.acc
-            self.dem = WaterShed.dem
-            self.fdir = WaterShed.fdir
+            self.acc = shed.acc
+            self.dem = shed.dem
+            self.fdir = shed.fdir
 
 
     def compute_height_differance(self, coordinate, top_left, bottom_right, lenth):

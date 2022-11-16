@@ -23,13 +23,13 @@ class Graph():
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon', 'y_lat'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
-        self.df_new = pd.DataFrame(columns=['OBJECTID_1', 'post_code', 'x_lon', 'y_lat', 'height'])
+        self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height'])
         x_lon_past, y_lat_past = None, None
 
         for i, row in df.iterrows():
             print(f'{i+1}/{df.shape[0]} hydropost...')
-            id, post_code  = row[0], row[1]
-            x_lon, y_lat = row[2], row[3]
+            hstation_id  = row[0]
+            x_lon, y_lat = row[1], row[2]
             coordinate = (x_lon, y_lat)
 
             # Define coordinate of map to download 
@@ -66,7 +66,7 @@ class Graph():
             height = self.compute_height_differance(coordinate, top_left, bottom_right, 10000)
 
             dct = {
-                'OBJECTID_1':id, 'post_code': post_code, 'x_lon':x_lon, 'y_lat':y_lat, 'height':height
+                'hstation_id': hstation_id, 'x_lon':x_lon, 'y_lat':y_lat, 'height':height
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
       

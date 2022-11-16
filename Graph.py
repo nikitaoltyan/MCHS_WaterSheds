@@ -23,7 +23,7 @@ class Graph():
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon', 'y_lat'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
-        self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height'])
+        self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'error'])
         x_lon_past, y_lat_past = None, None
 
         for i, row in df.iterrows():
@@ -63,10 +63,11 @@ class Graph():
             top_left = (lng_num-1, lat_num+2) if len(self.tif_pathes) == 9 else (lng_num, lat_num+1)
             bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
 
-            height = self.compute_height_differance(coordinate, top_left, bottom_right, 10000)
-
+            height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000)
+            error = 1 if success == False else 0
+            
             dct = {
-                'hstation_id': hstation_id, 'x_lon':x_lon, 'y_lat':y_lat, 'height':height
+                'hstation_id': hstation_id, 'x_lon':x_lon, 'y_lat':y_lat, 'height':height, 'error':error
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
       
@@ -98,11 +99,11 @@ class Graph():
         self.create_acc_graph(acc_slice, self.fdir, 2000)
 
         point = self.coordinate2point(coordinate, top_left, bottom_right)
-        river_pathes_nodes_DOWN, river_pathes_nodes_UP = self.compute_river_path(point, lenth)
+        river_pathes_nodes_DOWN, river_pathes_nodes_UP, success = self.compute_river_path(point, lenth)
 
         start, end = river_pathes_nodes_DOWN[-1], river_pathes_nodes_UP[-1]
         start_height, end_height = self.dem[start], self.dem[end]
-        return abs(start_height - end_height)
+        return abs(start_height - end_height), success
 
 
     def compute_river_path(self, point, lenth):
@@ -137,8 +138,9 @@ class Graph():
             except:
                 print(f"Out nodes not definded.\nLast node: {river_pathes_nodes_UP[-1]}\nCollected {len(river_pathes_nodes_UP)} nodes")
                 break
-        
-        return river_pathes_nodes_DOWN, river_pathes_nodes_UP
+                
+        success = True if (len(river_pathes_nodes_DOWN) == river_pathes_lenght_DOWN + 1) and (len(river_pathes_nodes_UP) == river_pathes_lenght_UP + 1) else False
+        return river_pathes_nodes_DOWN, river_pathes_nodes_UP, success
 
 
     def coordinate2point(self, coordinate, top_left, bottom_right):

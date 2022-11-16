@@ -245,15 +245,14 @@ class Main():
         
         
         
-    def compute_heights(self, excel_path, DEMs_path, save_path):
+    def compute_heights(self, excel_path, DEMs_path, min_acc=1000, save_path):
         # ---- Guard ---- 
         df = pd.read_csv(excel_path, sep=';', decimal=',')
         guard.height_data_contains_columns(df)
           
         # ---- Compute ----
         GraphClass = Graph.Graph()
-        heights_df = GraphClass.compute_height(excel_path, DEMs_path)
-        heights_df.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
+        GraphClass.compute_height(excel_path, DEMs_path, min_acc, save_path)
         
         # ----------------------------
         print('DONE')

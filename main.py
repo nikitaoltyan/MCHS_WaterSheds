@@ -4,6 +4,7 @@ import guard
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
 import numpy as np
+import pandas as pd
 import os
 import sys
 
@@ -137,9 +138,9 @@ class Main():
     def compute_shapes(self, tif_path, save_path, data=None, excel_data_path=None):
         if excel_data_path != None:
             # ---- Guard ---- 
-            
+            print('ERROR')
             # ---- Compute ----
-            
+            pass
             
         else:
             # ---- Guard ---- 
@@ -246,7 +247,8 @@ class Main():
         
     def compute_heights(self, excel_path, DEMs_path, save_path):
         # ---- Guard ---- 
-        guard.height_data_contains_columns(excel_path)
+        df = pd.read_csv(excel_path, sep=';', decimal=',')
+        guard.height_data_contains_columns(df)
           
         # ---- Compute ----
         heights_df = GraphClass.compute_height(excel_path, DEMs_path)

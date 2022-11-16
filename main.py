@@ -251,6 +251,7 @@ class Main():
         guard.height_data_contains_columns(df)
           
         # ---- Compute ----
+        GraphClass = Graph.Graph()
         heights_df = GraphClass.compute_height(excel_path, DEMs_path)
         heights_df.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
         

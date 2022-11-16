@@ -52,7 +52,7 @@ class Graph():
                 # check if files 'exisits'
                 for tif_path in self.tif_pathes:
                     if path.exists("guru99.txt") == False:
-                        print(f'{tif_path} is not exist in path {DEMs_path}'
+                        print(f'{tif_path} is not exist in path {DEMs_path}')
                         break
 
                 # Download DEM and preprocess it

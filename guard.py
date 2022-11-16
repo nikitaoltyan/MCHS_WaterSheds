@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 def data_is_not_none(data):
     assert data != None, 'Data is not specified'
 
@@ -18,8 +15,7 @@ def data_contains_values(data_dict):
         assert 'wtrlvltime' in data, f'Missing wtrlvltime for {data}'
     
 
-def height_data_contains_columns(file_path):
-    df = pd.read_csv(file_path, sep=';', decimal=',')
+def height_data_contains_columns(df):
     columns = df.columns
     dtypes = df.dtypes
     assert len(columns) == 3, "Must be 3 columns: ['hstation_id', 'x_lon', 'y_lat']"

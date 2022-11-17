@@ -26,7 +26,7 @@ class Graph():
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
-        self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'error'])
+        self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'distance_m', 'error'])
         x_lon_past, y_lat_past = None, None
 
         for i, row in df.iterrows():
@@ -75,15 +75,16 @@ class Graph():
             bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
 
             if self.dem is not None:
-                height, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
+                height, distance, success = self.compute_height_differance(coordinate, top_left, bottom_right, 10000, min_acc)
                 error = 1 if success == False else 0
 
                 dct = {
                     'hstation_id': hstation_id, 
-                    'x_lon':x_lon, 
-                    'y_lat':y_lat, 
-                    'height':height, 
-                    'error':error
+                    'x_lon': x_lon, 
+                    'y_lat': y_lat, 
+                    'height': height,
+                    'distance_m': distance,
+                    'error': error
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
                 self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
@@ -116,11 +117,11 @@ class Graph():
             self.create_acc_graph(acc_slice, self.fdir, min_acc)
 
         point = self.coordinate2point(coordinate, top_left, bottom_right)
-        river_pathes_nodes_DOWN, river_pathes_nodes_UP, success = self.compute_river_path(point, lenth)
+        river_pathes_nodes_DOWN, river_pathes_nodes_UP, distance, success = self.compute_river_path(point, lenth)
 
         start, end = river_pathes_nodes_DOWN[-1], river_pathes_nodes_UP[-1]
         start_height, end_height = self.dem[start], self.dem[end]
-        return abs(start_height - end_height), success
+        return abs(start_height - end_height), distance, success
 
 
     def compute_river_path(self, point, lenth):
@@ -156,8 +157,9 @@ class Graph():
                 print(f"Out nodes not definded.\nLast node: {river_pathes_nodes_UP[-1]}\nCollected {len(river_pathes_nodes_UP)} nodes")
                 break
                 
-        success = True if (len(river_pathes_nodes_DOWN) == river_pathes_lenght_DOWN + 1) and (len(river_pathes_nodes_UP) == river_pathes_lenght_UP + 1) else False
-        return river_pathes_nodes_DOWN, river_pathes_nodes_UP, success
+        distance = (len(river_pathes_nodes_DOWN) + len(river_pathes_nodes_UP)) * point_lenth
+        success = True if (len(river_pathes_nodes_DOWN) == river_pathes_lenght_DOWN + 1) and (len(river_pathes_nodes_UP) > (0.5*river_pathes_lenght_UP)) else False
+        return river_pathes_nodes_DOWN, river_pathes_nodes_UP, distance, success
 
 
     def coordinate2point(self, coordinate, top_left, bottom_right):

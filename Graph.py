@@ -59,11 +59,13 @@ class Graph():
                         print(f'{tif_path} is not exist in path {DEMs_path}')
                         success_list.append(False)
 
-                # Download DEM and preprocess it
+                 # Download DEM and preprocess it
                 if len(success_list) == 0:
+                    print('All required DEMs exist')
                     self.compute_DEM(self.tif_pathes, lng_num, lat_num)
                 else:
                     # Temporary while I'm thinking what to with others frames DEMs
+                    print('Not all required DEMs exist')
                     self.compression = 1
                     self.acc = None
                     self.dem = None
@@ -85,6 +87,18 @@ class Graph():
                     'height': height,
                     'distance_m': distance,
                     'error': error
+                }
+                self.df_new = self.df_new.append(dct, ignore_index=True)
+                self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
+            else:
+                # here is save for error hydropost (corner hydropost without all DEMs)
+                dct = {
+                    'hstation_id': hstation_id, 
+                    'x_lon': x_lon, 
+                    'y_lat': y_lat, 
+                    'height': 0,
+                    'distance_m': 0,
+                    'error': 1
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
                 self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')
@@ -111,7 +125,7 @@ class Graph():
 
     def compute_height_differance(self, coordinate, top_left, bottom_right, lenth, min_acc):
         # In case to not create acc_graph every time for same lon & lat
-        if (self.acc_slice is not None) or (self.acc_Graph is not None):
+        if (self.acc_slice is None) or (self.acc_Graph is None):
             acc_slice = self.acc.copy()
             # Filter river cells
             self.create_acc_graph(acc_slice, self.fdir, min_acc)

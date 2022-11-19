@@ -251,11 +251,6 @@ class Graph():
         nodes_accumulation = [self.acc_slice[node[0], node[1]] for node in in_nodes]
         return in_nodes[nodes_accumulation.index(max(nodes_accumulation))]
     
-    def in_node_G(self, node):
-        in_nodes = [edge[0] for edge in self.G.in_edges(node)]
-        nodes_accumulation = [cut_acc[node[0], node[1]] for node in in_nodes]
-        return in_nodes[nodes_accumulation.index(max(nodes_accumulation))]
-
     def in_nodes(self, node):
         return [node[0] for node in self.G.in_edges(node)]
 
@@ -501,12 +496,12 @@ class Graph():
 
                 outs = [real_coord]
                 while len(outs) < 5:
-                    out = self.out_node_G(outs[-1])
+                    out = out_node_G(outs[-1])
                     outs.append(out)
 
                 ins = [real_coord]
                 while len(ins) < 5:
-                    in_ = self.in_node_G(ins[-1])
+                    in_ = in_node_G(ins[-1])
                     ins.append(in_)
 
                 start, end = ins[-1], outs[-1]

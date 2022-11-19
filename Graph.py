@@ -105,10 +105,10 @@ class Graph():
 
     
 
-    def compute_DEM(self, pathes, lng_num, lat_num):
+    def compute_DEM(self, pathes, lng_num, lat_num, compression=3):
         if len(pathes) == 9:
             shed = WaterShed.WaterSheds(files_pathes=pathes, compute_acc=True, compression=3)
-            self.compression = 3
+            self.compression = compression
             self.acc = shed.acc
             self.dem = shed.dem
             self.fdir = shed.fdir
@@ -117,7 +117,7 @@ class Graph():
             lat = str(lat_num)
             lng = ''.join((['0'] + list(str(int(lng_num))))[-3:])
             shed = WaterShed.WaterSheds(file_path=f'n{lat}_e{lng}_1arc_v3.tif', compute_acc=True)
-            self.compression = 1
+            self.compression = compression
             self.acc = shed.acc
             self.dem = shed.dem
             self.fdir = shed.fdir
@@ -249,6 +249,11 @@ class Graph():
     def in_node(self, node):
         in_nodes = [edge[0] for edge in self.acc_Graph.in_edges(node)]
         nodes_accumulation = [self.acc_slice[node[0], node[1]] for node in in_nodes]
+        return in_nodes[nodes_accumulation.index(max(nodes_accumulation))]
+    
+    def in_node_G(self, node):
+        in_nodes = [edge[0] for edge in self.G.in_edges(node)]
+        nodes_accumulation = [cut_acc[node[0], node[1]] for node in in_nodes]
         return in_nodes[nodes_accumulation.index(max(nodes_accumulation))]
 
     def in_nodes(self, node):
@@ -387,3 +392,163 @@ class Graph():
             all_out_nodes += out_nodes_log
 
         return flood_area_acc.shape, flooded_nodes_down, flooded_nodes_up, all_out_nodes, flood_area_dem, h, point, lenth_with_offset
+
+    
+    def get_step(self, y_delta, x_delta):
+        """
+        Calculate step for future river slice
+        """
+        if ((y_delta > 3) and (x_delta > 3)) \
+            or ((y_delta < -3) and (x_delta < -3)):
+            return (1, 1)
+        elif ((y_delta > 3) and (x_delta < -3)) \
+            or ((y_delta < -3) and (x_delta >3)):
+            return (1, -1)
+        elif x_delta <= 3:
+            return (0, 1)
+        else:
+            return (1, 0)
+
+        
+    def get_river_slice(self, file_path, DEMs_path, save_path):
+        df = pd.read_csv(file_path, sep=';', decimal=',')
+        df['x_lon_int'] = df['x_lon'].values.astype(int)
+        df['y_lat_int'] = df['y_lat'].values.astype(int)
+        
+        # Sort df by x_lon and y_lat for future reduction of DEM computing
+        df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
+        
+        # Creat new df to save successes of river slices
+        self.df_new = pd.DataFrame(columns=['hstation_id', 'success'])
+        
+        x_lon_past, y_lat_past = None, None
+        
+        for i, row in df.iterrows():
+            print(f'{i+1}/{df.shape[0]} hydropost...')
+            hstation_id  = row[0]
+            x_lon, y_lat = row[1], row[2]
+            coordinate = (x_lon, y_lat)
+        
+            # Define coordinate of map to download 
+            lng_num, lat_num = int(x_lon), int(y_lat)
+
+            # Check if this coordinates weren't calculated
+            if (x_lon_past != lng_num) or (y_lat_past != lat_num):
+                x_lon_past, y_lat_past = lng_num, lat_num
+
+                self.tif_pathes = []
+                for i in range(lat_num-1, lat_num+2):
+                    for j in range(lng_num-1, lng_num+2):
+                        lat = str(i)
+                        lng = ''.join((['0'] + list(str(int(j))))[-3:])
+                        self.tif_pathes.append(f'{DEMs_path}/n{lat}_e{lng}_1arc_v3.tif')
+                        
+                # check if files 'exisits'
+                success_list = []
+                for tif_path in self.tif_pathes:
+                    if path.exists(tif_path) == False:
+                        print(f'{tif_path} is not exist in path {DEMs_path}')
+                        success_list.append(False)
+
+                # Download DEM and preprocess it
+                if len(success_list) == 0:
+                    print('All required DEMs exist')
+                    self.compute_DEM(self.tif_pathes, lng_num, lat_num, compression=1)
+                else:
+                    # Temporary while I'm thinking what to with others frames DEMs
+                    print('Not all required DEMs exist')
+                    self.compression = 1
+                    self.acc = None
+                    self.dem = None
+                    self.fdir = None
+        
+        
+            # Calculate Heights
+            top_left = (lng_num-1, lat_num+2) if len(self.tif_pathes) == 9 else (lng_num, lat_num+1)
+            bottom_right = (lng_num+2, lat_num-1) if len(self.tif_pathes) == 9 else (lng_num+1, lat_num)
+
+            if self.dem is not None:
+                point = self.coordinate2point(coordinate, top_left, bottom_right)
+            
+                new_top_left, new_bottom_right = (point[0]-70, point[1]-70), (point[0]+70, point[1]+70)
+                cut_fdir = self.fdir[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+                cut_acc = self.acc[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+                cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+
+                # Graph for specified area
+                G = nx.DiGraph()
+                shape = cut_fdir.shape
+
+                try:
+                    for row in tqdm(range(1, shape[0]-1)):
+                        for column in range(1, shape[1]-1):
+                            dir = cut_fdir[row, column]
+                            start = (row, column)
+                            target = self.fdir_coordinate(start, dir)
+                            G.add_edge(start, target)
+                except:
+                    break
+
+                real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
+
+                outs = [real_coord]
+                while len(outs) < 5:
+                    out = self.out_node_G(outs[-1])
+                    outs.append(out)
+
+                ins = [real_coord]
+                while len(ins) < 5:
+                    in_ = self.in_node_G(ins[-1])
+                    ins.append(in_)
+
+                start, end = ins[-1], outs[-1]
+                y_delta, x_delta = end[0] - start[0], end[1] - start[1]
+
+                step = self.get_step(y_delta, x_delta)
+                target_height = cut_dem[real_coord] + 15
+                start = real_coord
+
+                right_heights = [cut_dem[real_coord]]
+                right_coords = [real_coord]
+                while (max(right_heights) < target_height) and (len(right_heights) < 65):
+                    start = [sum(x) for x in zip(start, step)]
+                    height = cut_dem[start[0], start[1]]
+                    right_heights.append(height)
+                    right_coords.append(start)
+
+                start = real_coord
+                step = [-i for i in step]
+                left_heights = [cut_dem[real_coord]]
+                left_coords = [real_coord]
+                while (max(left_heights) < target_height) and (len(left_heights) < 65):
+                    start = [sum(x) for x in zip(start, step)]
+                    height = cut_dem[start[0], start[1]]
+                    left_heights.append(height)
+                    left_coords.append(start)
+
+                river_slice = left_heights[::-1] + right_heights[1:]
+                coords_slice = left_coords[::-1] + right_coords[1:]
+                coords_bin_slice = [0 if type(coord) != tuple else 1 for coord in coords_slice]
+
+                if os.path.exists(f'{save_path}/{waterpost_name}') == False:
+                    os.mkdir(f'/content/gdrive/MyDrive/MCHS/{waterpost_name}')
+
+                path = f'{save_path}/{waterpost_name}/{waterpost_name}_river_slice.csv'
+                final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})
+                final_df.to_csv(path, index=False, sep=',')
+                
+                dct = {
+                    'hstation_id': hstation_id, 
+                    'success': 1
+                }
+                self.df_new = self.df_new.append(dct, ignore_index=True)
+                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')
+                
+            else:
+                # here is save for error hydropost (corner hydropost without all DEMs)
+                dct = {
+                    'hstation_id': hstation_id, 
+                    'success': 0
+                }
+                self.df_new = self.df_new.append(dct, ignore_index=True)
+                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')

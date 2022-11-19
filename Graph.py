@@ -476,7 +476,7 @@ class Graph():
                 cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
 
                 # Graph for specified area
-                self.G = nx.DiGraph()
+                G = nx.DiGraph()
                 shape = cut_fdir.shape
 
                 try:
@@ -485,11 +485,19 @@ class Graph():
                             dir = cut_fdir[row, column]
                             start = (row, column)
                             target = self.fdir_coordinate(start, dir)
-                            self.G.add_edge(start, target)
+                            G.add_edge(start, target)
                 except:
                     break
 
                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
+                
+                def out_node_G(node):
+                    return [node for node in G.edges(node)][0][1]
+    
+                def in_node_G(node):
+                    in_nodes = [edge[0] for edge in G.in_edges(node)]
+                    nodes_accumulation = [cut_acc[node[0], node[1]] for node in in_nodes]
+                    return in_nodes[nodes_accumulation.index(max(nodes_accumulation))]
 
                 outs = [real_coord]
                 while len(outs) < 5:

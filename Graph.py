@@ -6,6 +6,7 @@ from numpy import unravel_index
 import networkx as nx
 from tqdm import tqdm
 from os import path
+import os
 
 
 
@@ -534,7 +535,7 @@ class Graph():
                 coords_bin_slice = [0 if type(coord) != tuple else 1 for coord in coords_slice]
 
                 if os.path.exists(f'{save_path}/{waterpost_name}') == False:
-                    os.mkdir(f'/content/gdrive/MyDrive/MCHS/{waterpost_name}')
+                    os.makedirs(f'/content/gdrive/MyDrive/MCHS/{waterpost_name}')
 
                 path_to_csv = f'{save_path}/{waterpost_name}/{waterpost_name}_river_slice.csv'
                 final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})

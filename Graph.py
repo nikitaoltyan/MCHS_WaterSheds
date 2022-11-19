@@ -533,9 +533,9 @@ class Graph():
                 if os.path.exists(f'{save_path}/{waterpost_name}') == False:
                     os.mkdir(f'/content/gdrive/MyDrive/MCHS/{waterpost_name}')
 
-                path = f'{save_path}/{waterpost_name}/{waterpost_name}_river_slice.csv'
+                path_to_csv = f'{save_path}/{waterpost_name}/{waterpost_name}_river_slice.csv'
                 final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})
-                final_df.to_csv(path, index=False, sep=',')
+                final_df.to_csv(path_to_csv, index=False, sep=',')
                 
                 dct = {
                     'hstation_id': hstation_id, 

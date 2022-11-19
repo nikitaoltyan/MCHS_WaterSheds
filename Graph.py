@@ -107,7 +107,7 @@ class Graph():
 
     def compute_DEM(self, pathes, lng_num, lat_num, compression=3):
         if len(pathes) == 9:
-            shed = WaterShed.WaterSheds(files_pathes=pathes, compute_acc=True, compression=3)
+            shed = WaterShed.WaterSheds(files_pathes=pathes, compute_acc=True, compression=compression)
             self.compression = compression
             self.acc = shed.acc
             self.dem = shed.dem
@@ -476,7 +476,7 @@ class Graph():
                 cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
 
                 # Graph for specified area
-                G = nx.DiGraph()
+                self.G = nx.DiGraph()
                 shape = cut_fdir.shape
 
                 try:
@@ -485,7 +485,7 @@ class Graph():
                             dir = cut_fdir[row, column]
                             start = (row, column)
                             target = self.fdir_coordinate(start, dir)
-                            G.add_edge(start, target)
+                            self.G.add_edge(start, target)
                 except:
                     break
 

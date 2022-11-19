@@ -534,10 +534,10 @@ class Graph():
                 coords_slice = left_coords[::-1] + right_coords[1:]
                 coords_bin_slice = [0 if type(coord) != tuple else 1 for coord in coords_slice]
 
-                if os.path.exists(f'{save_path}/{waterpost_name}') == False:
-                    os.makedirs(f'/content/gdrive/MyDrive/MCHS/{waterpost_name}')
+                if os.path.exists(f'{save_path}/{hstation_id}') == False:
+                    os.makedirs(f'{save_path}/{hstation_id}')
 
-                path_to_csv = f'{save_path}/{waterpost_name}/{waterpost_name}_river_slice.csv'
+                path_to_csv = f'{save_path}/{hstation_id}/{hstation_id}_river_slice.csv'
                 final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})
                 final_df.to_csv(path_to_csv, index=False, sep=',')
                 

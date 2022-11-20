@@ -421,7 +421,7 @@ class Graph():
         
         for i, row in df.iterrows():
             print(f'{i+1}/{df.shape[0]} hydropost...')
-            hstation_id  = row[0]
+            hstation_id  = int(row[0])
             x_lon, y_lat = row[1], row[2]
             coordinate = (x_lon, y_lat)
         
@@ -539,7 +539,7 @@ class Graph():
 
                 path_to_csv = f'{save_path}/{hstation_id}/{hstation_id}_river_slice.csv'
                 final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})
-                final_df.to_csv(path_to_csv, index=False, sep=',')
+                final_df.to_csv(path_to_csv, index=False, sep=';')
                 
                 dct = {
                     'hstation_id': hstation_id, 

@@ -28,11 +28,12 @@ class Graph():
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
         self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'distance_m', 'error'])
+        self.df_new = self.df_new.astype(dtype= {'hstation_id':'int64', 'height':'int64', 'distance_m':'int64', 'error':'int64'})
         x_lon_past, y_lat_past = None, None
 
         for i, row in df.iterrows():
             print(f'{i+1}/{df.shape[0]} hydropost...')
-            hstation_id  = row[0]
+            hstation_id  = int(row[0])
             x_lon, y_lat = row[1], row[2]
             coordinate = (x_lon, y_lat)
 
@@ -85,9 +86,9 @@ class Graph():
                     'hstation_id': hstation_id, 
                     'x_lon': x_lon, 
                     'y_lat': y_lat, 
-                    'height': height,
-                    'distance_m': distance,
-                    'error': error
+                    'height': int(height),
+                    'distance_m': int(distance),
+                    'error': int(error)
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
                 self.df_new.to_csv(f'{save_path}/hydroposts_height_calculated.csv', sep=';')

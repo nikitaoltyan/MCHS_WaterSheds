@@ -486,7 +486,13 @@ class Graph():
                             target = self.fdir_coordinate(start, dir)
                             G.add_edge(start, target)
                 except:
-                    break
+                    dct = {
+                        'hstation_id': hstation_id, 
+                        'success': 0
+                    }
+                    self.df_new = self.df_new.append(dct, ignore_index=True)
+                    self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')
+                    continue
 
                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
                 

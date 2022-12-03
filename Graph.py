@@ -18,6 +18,7 @@ class Graph():
         self.fdir = fdir
         self.acc = acc
         self.compression = compression
+        self.point_size_meteres = 35
 
 
     def compute_height(self, file_path, DEMs_path, min_acc, save_path):
@@ -48,13 +49,19 @@ class Graph():
                 # Set acc values as None to calulate them later
                 self.acc_slice = None
                 self.acc_Graph = None
+                
+                if lat_num+1 < 60:
+                    self.point_size_meteres = 35
+                else:
+                    self.point_size_meteres = 65
 
                 self.tif_pathes = []
                 for i in range(lat_num-1, lat_num+2):
                     for j in range(lng_num-1, lng_num+2):
                         lat = str(i)
                         lng = ''.join((['0'] + list(str(int(j))))[-3:])
-                        self.tif_pathes.append(f'{DEMs_path}/n{lat}_e{lng}_1arc_v3.tif')
+                        file_name = f'n{lat}_e{lng}_1arc_v3.tif' if lat_num+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
+                        self.tif_pathes.append(f'{DEMs_path}/{file_name}')
                         
                 # check if files 'exisits'
                 success_list = []
@@ -147,7 +154,7 @@ class Graph():
         Function returns all river nodes down and up from the given point.
         * lenth - in meteres from start to up and down.
         """
-        point_lenth = self.compression * 35       # around 35 meteres shape for each point
+        point_lenth = self.compression * self.point_size_meteres       # around 35 meteres shape for each point
 
         # DOWN
         river_pathes_lenght_DOWN = int(lenth/point_lenth)        # количество затопленных клеток реки вниз по течению
@@ -271,7 +278,7 @@ class Graph():
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         y, x = point[0], point[1]
         print(point)
-        lenth_with_offset = int(lenth/35 + 40)  # For offset
+        lenth_with_offset = int(lenth/self.point_size_meteres + 40)  # For offset
         flood_area_fdir = self.fdir[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
         flood_area_dem = self.dem[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
         flood_area_acc = self.acc.copy()
@@ -337,8 +344,8 @@ class Graph():
                     start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
                     height_rise = abs(end_height - h)
                     height_difference = abs(start_height - end_height)
-                    meter_path = height_difference / 35
-                    point_path = round(height_rise / meter_path, 0) # * out of 35 (in meteres). From end (lower) to upper.
+                    meter_path = height_difference / self.point_size_meteres
+                    point_path = round(height_rise / meter_path, 0) # * out of self.point_size_meteres (in meteres). From end (lower) to upper.
                     out_nodes_log.append((out_node, end, point_path))
             
             if len(all_nodes) == 0:
@@ -380,8 +387,8 @@ class Graph():
                     start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
                     height_rise = abs(end_height - h)
                     height_difference = abs(start_height - end_height)
-                    meter_path = height_difference / 35
-                    point_path = round(height_rise / meter_path, 0) # * out of 35 (in meteres). From end (lower) to upper.
+                    meter_path = height_difference / self.point_size_meteres
+                    point_path = round(height_rise / meter_path, 0) # * out of self.point_size_meteres (in meteres). From end (lower) to upper.
                     out_nodes_log.append((out_node, end, point_path))
 
             
@@ -440,7 +447,8 @@ class Graph():
                     for j in range(lng_num-1, lng_num+2):
                         lat = str(i)
                         lng = ''.join((['0'] + list(str(int(j))))[-3:])
-                        self.tif_pathes.append(f'{DEMs_path}/n{lat}_e{lng}_1arc_v3.tif')
+                        file_name = f'n{lat}_e{lng}_1arc_v3.tif' if lat_num+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
+                        self.tif_pathes.append(f'{DEMs_path}/{file_name}')
                         
                 # check if files 'exisits'
                 success_list = []

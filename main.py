@@ -86,6 +86,7 @@ class Main():
         # Get WaterShed (precomputed or computed on demand)
         shed = self._compute_shed(x_lon, y_lat)
         
+        lng_num, lat_num = int(x_lon), int(y_lat)
         if shed is not None:
             top_left = (lng_num-1, lat_num+2)
             bottom_right = (lng_num+2, lat_num-1)

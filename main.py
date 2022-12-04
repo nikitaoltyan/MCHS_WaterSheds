@@ -195,7 +195,7 @@ class Main():
                 'success': 1
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
-            self.df_new.to_csv(f'{save_path}/{save.dt_string}_tifs_for_shape_calculated.csv', sep=';')
+            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';')
 
             # ----------------------------
             print(f'Tif for hstation_id: {waterpost_name}, with freq_name:{freq_name} saved')
@@ -211,7 +211,7 @@ class Main():
                 'success': 0
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
-            self.df_new.to_csv(f'{save_path}/{save.dt_string}_tifs_for_shape_calculated.csv', sep=';')
+            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';')
         
     
     def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path):

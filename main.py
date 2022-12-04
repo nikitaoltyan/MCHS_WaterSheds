@@ -184,7 +184,7 @@ class Main():
             # Delete the temp grid               
             os.remove('grid_data')
             
-             dct = {
+            dct = {
                 'hstst_id': int(waterpost_name), 
                 'lat': y_lat,
                 'lon': x_lon,

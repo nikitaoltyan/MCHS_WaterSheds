@@ -220,7 +220,7 @@ class Graph():
         acc_slice[acc_slice < min_acc] = 0
         self.acc_slice = acc_slice # For future nodes matching
         self.acc_Graph = nx.DiGraph()
-        for i in tqdm(range(1, acc_slice.shape[0]-1)):
+        for i in range(1, acc_slice.shape[0]-1):
             for j in range(1, acc_slice.shape[1]-1):
                 if acc_slice[i, j] != 0:
                     dir = dir_slice[i, j]
@@ -247,7 +247,7 @@ class Graph():
             return (row + 1, column - 1)
         elif dir == 16: #Left
             return (row, column - 1)
-        elif dir == 32: #Up-Left
+        else: #Up-Left
             return (row - 1, column - 1)
 
     
@@ -277,7 +277,6 @@ class Graph():
     def compute_flood(self, coordinate, top_left, bottom_right, lenth, target_h):
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         y, x = point[0], point[1]
-        print(point)
         lenth_with_offset = int(lenth/self.point_size_meteres + 40)  # For offset
         flood_area_fdir = self.fdir[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
         flood_area_dem = self.dem[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
@@ -296,7 +295,7 @@ class Graph():
         self.G = nx.DiGraph()
         shape = flood_area_fdir.shape
 
-        for row in tqdm(range(1, shape[0]-1)):
+        for row in range(1, shape[0]-1):
             for column in range(1, shape[1]-1):
                 dir = flood_area_fdir[row, column]
                 start = (row, column)
@@ -309,7 +308,7 @@ class Graph():
         flooded_nodes_down = []
         all_out_nodes = [] # For both up and down
 
-        for i, node in tqdm(enumerate(river_pathes_nodes_DOWN[::-1])): # Начинаем с последней затопленной клетки
+        for i, node in enumerate(river_pathes_nodes_DOWN[::-1]): # Начинаем с последней затопленной клетки
             all_nodes = [node]
             nodes = [node]
             out_nodes_log = []
@@ -354,7 +353,7 @@ class Graph():
             all_out_nodes += out_nodes_log
 
         flooded_nodes_up = []
-        for i, node in tqdm(enumerate(river_pathes_nodes_UP)): # Начинаем с первой клетки
+        for i, node in enumerate(river_pathes_nodes_UP): # Начинаем с первой клетки
             all_nodes = [node]
             nodes = [node]
             out_nodes_log = []

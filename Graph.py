@@ -290,7 +290,7 @@ class Graph():
         self.create_acc_graph(flood_area_acc, flood_area_fdir, 200)
 
         # Get river pathes
-        river_pathes_nodes_DOWN, river_pathes_nodes_UP = self.compute_river_path(new_point, lenth)
+        river_pathes_nodes_DOWN, river_pathes_nodes_UP, _, success = self.compute_river_path(new_point, lenth)
 
         # Graph for specified area
         self.G = nx.DiGraph()

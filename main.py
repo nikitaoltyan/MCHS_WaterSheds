@@ -312,7 +312,7 @@ class Main():
             tmp_ds = mem_drv.CreateDataSource('mem_temp_data')
             tmp_layer = tmp_ds.CreateLayer(tmp_layername, geom_type=ogr.wkbPolygon, srs = srs )
             
-            raster_file = f'{tifs_path}/{hsts_id}/{hsts_id}_{freq_name}.tif'
+            raster_file = f'{tifs_path}/{hsts_id}/{hsts_id}_{frequency_name}.tif'
             
             if os.path.exists(raster_file):
                 continue

@@ -49,7 +49,7 @@ class Main():
             # Download DEM and preprocess it
             if len(success_list) == 0:
                 print('All required DEMs exist')
-                self.shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True)
+                self.shed = WaterShed.WaterSheds(files_pathes=self.tif_pathes, compute_acc=True)
                 return self.shed
             else:
                 return None

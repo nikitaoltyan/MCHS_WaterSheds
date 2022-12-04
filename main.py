@@ -37,13 +37,13 @@ class Main():
                     lat = str(i)
                     lng = ''.join((['0'] + list(str(int(j))))[-3:])
                     file_name = f'n{lat}_e{lng}_1arc_v3.tif' if lat_num+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
-                    self.tif_pathes.append(f'{DEMs_path}/{file_name}')
+                    self.tif_pathes.append(f'{self.DEMs_path}/{file_name}')
                     
             # check if files 'exists'
             success_list = []
             for tif_path in self.tif_pathes:
                 if path.exists(tif_path) == False:
-                    print(f'{tif_path} is not exist in path {DEMs_path}')
+                    print(f'{tif_path} is not exist in path {self.DEMs_path}')
                     success_list.append(False)
 
             # Download DEM and preprocess it

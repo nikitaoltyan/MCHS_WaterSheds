@@ -4,6 +4,7 @@ import guard
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
 from datetime import datetime
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from os import path
@@ -49,8 +50,9 @@ class Main():
             if len(success_list) == 0:
                 print('All required DEMs exist')
                 self.shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True)
-            
-            return self.shed
+                return self.shed
+            else:
+                return None
         else:
             return self.shed
           
@@ -71,119 +73,147 @@ class Main():
     def compute_shape(self, save_path, data_dict):
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
-        waterpost_name = data_dict['hsts_id']
+        frequency = data_dict['frequency']
+        waterpost_name = int(data_dict['hsts_id'])
+        wtrdepth = data_dict['wtrdepth']
+        wtrlvltime = data_dict['wtrlvltime']
         lenth = data_dict['lenth']
         target_h = data_dict['wtrdepth']
         
         # Define coordinate of map to download 
         (x_lon, y_lat) = coordinate
       
-        # GEt WaterShed (precomputed or computed on demand)
+        # Get WaterShed (precomputed or computed on demand)
         shed = self._compute_shed(x_lon, y_lat)
         
-        top_left = (lng_num-1, lat_num+2)
-        bottom_right = (lng_num+2, lat_num-1)
-          
-        GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
-        (shape, 
-            flooded_nodes_down, 
-            flooded_nodes_up,
-            all_out_nodes,
-            dem, 
-            height, 
-            point_coord, 
-            offset
-        ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
-        
-        new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
-        for down_node in flooded_nodes_down:
-            y, x = down_node[0], down_node[1]
-            new_space_no_interpol[y, x] = 1
+        if shed is not None:
+            top_left = (lng_num-1, lat_num+2)
+            bottom_right = (lng_num+2, lat_num-1)
 
-        for up_node in flooded_nodes_up:
-            y, x = up_node[0], up_node[1]
-            new_space_no_interpol[y, x] = 1
+            GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
+            (shape, 
+                flooded_nodes_down, 
+                flooded_nodes_up,
+                all_out_nodes,
+                dem, 
+                height, 
+                point_coord, 
+                offset
+            ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
+
+            new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
+            for down_node in flooded_nodes_down:
+                y, x = down_node[0], down_node[1]
+                new_space_no_interpol[y, x] = 1
+
+            for up_node in flooded_nodes_up:
+                y, x = up_node[0], up_node[1]
+                new_space_no_interpol[y, x] = 1
+
+            flood_outer = new_space_no_interpol
+
+            main_point = point_coord
+            top_left, bottom_right = top_left, bottom_right
+            main_shape = shed.dem.shape
+
+            y_path, x_path = (top_left[1]-bottom_right[1])/main_shape[0], (bottom_right[0] - top_left[0])/main_shape[1]
+
+            cut_top_left = (top_left[1]-(main_point[0]-offset)*y_path, top_left[0]+(main_point[1]-offset)*x_path)
+            cut_bottom_right = (top_left[1]-(main_point[0]+offset)*y_path, top_left[0]+(main_point[1]+offset)*x_path)
+
+            y_path, x_path = (cut_top_left[0]-cut_bottom_right[0])/flood_outer.shape[0], (cut_bottom_right[1] - cut_top_left[1])/flood_outer.shape[1]
+
+            # ----------------------------
+            print('Flood computed!')
+            print('Saving it as .tif...')
+            # ----------------------------
+
+
+
+            nlines = flood_outer.shape[0]
+            ncolumns = flood_outer.shape[1]
+            data = flood_outer
+
+            def getGeoTransform(extent, nlines, ncols):
+                resx = (extent[2] - extent[0]) / ncols
+                resy = (extent[3] - extent[1]) / nlines
+                return [extent[0], resx, 0, extent[3] , 0, -resy]
+
+            # Define the data extent (min. lon, min. lat, max. lon, max. lat)
+            extent = [cut_top_left[1], cut_bottom_right[0], cut_bottom_right[1], cut_top_left[0]]
+
+            # Export the test array to GeoTIFF ================================================
+
+            # Get GDAL driver GeoTiff
+            driver = gdal.GetDriverByName('GTiff')
+
+            # Get dimensions
+            nlines = data.shape[0]
+            ncols = data.shape[1]
+            nbands = len(data.shape)
+            data_type = gdal.GDT_Int16 # gdal.GDT_Float32
+
+            # Create a temp grid
+            grid_data = driver.Create('grid_data', ncols, nlines, 1, data_type)
+
+            # Write data for each bands
+            grid_data.GetRasterBand(1).WriteArray(data)
+
+            # Lat/Lon WSG84 Spatial Reference System
+            srs = osr.SpatialReference()
+            srs.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+
+            # Setup projection and geo-transform
+            grid_data.SetProjection(srs.ExportToWkt())
+            grid_data.SetGeoTransform(getGeoTransform(extent, nlines, ncols))
+
+            # Save the file
+            file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}.tif'
+            try:
+                os.makedirs(f"{save_path}/{waterpost_name}")
+                driver.CreateCopy(file_name, grid_data, 0)
+                print(f'Generated GeoTIFF: {file_name}')
+            except:
+                driver.CreateCopy(file_name, grid_data, 0)
+
+
+            # Close the file
+            driver = None
+            grid_data = None
+
+            # Delete the temp grid               
+            os.remove('grid_data')
             
-        flood_outer = new_space_no_interpol
-         
-        main_point = point_coord
-        top_left, bottom_right = top_left, bottom_right
-        main_shape = shed.dem.shape
+             dct = {
+                'hstst_id': int(waterpost_name), 
+                'lat': y_lat,
+                'lon': x_lon,
+                'frequency': frequency, 
+                'wtrdepth': wtrdepth, 
+                'wtrlvltime': wtrlvltime,
+                'success': 1
+            }
+            self.df_new = self.df_new.append(dct, ignore_index=True)
+            self.df_new.to_csv(f'{save_path}/{save.dt_string}_tifs_for_shape_calculated.csv', sep=';')
 
-        y_path, x_path = (top_left[1]-bottom_right[1])/main_shape[0], (bottom_right[0] - top_left[0])/main_shape[1]
-
-        cut_top_left = (top_left[1]-(main_point[0]-offset)*y_path, top_left[0]+(main_point[1]-offset)*x_path)
-        cut_bottom_right = (top_left[1]-(main_point[0]+offset)*y_path, top_left[0]+(main_point[1]+offset)*x_path)
-
-        y_path, x_path = (cut_top_left[0]-cut_bottom_right[0])/flood_outer.shape[0], (cut_bottom_right[1] - cut_top_left[1])/flood_outer.shape[1]
-        
-        # ----------------------------
-        print('Flood computed!')
-        print('Saving it as .tif...')
-        # ----------------------------
-        
-        
-        
-        nlines = flood_outer.shape[0]
-        ncolumns = flood_outer.shape[1]
-        data = flood_outer
-
-        def getGeoTransform(extent, nlines, ncols):
-            resx = (extent[2] - extent[0]) / ncols
-            resy = (extent[3] - extent[1]) / nlines
-            return [extent[0], resx, 0, extent[3] , 0, -resy]
-
-        # Define the data extent (min. lon, min. lat, max. lon, max. lat)
-        extent = [cut_top_left[1], cut_bottom_right[0], cut_bottom_right[1], cut_top_left[0]]
-
-        # Export the test array to GeoTIFF ================================================
-
-        # Get GDAL driver GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
-
-        # Get dimensions
-        nlines = data.shape[0]
-        ncols = data.shape[1]
-        nbands = len(data.shape)
-        data_type = gdal.GDT_Int16 # gdal.GDT_Float32
-
-        # Create a temp grid
-        grid_data = driver.Create('grid_data', ncols, nlines, 1, data_type)
-
-        # Write data for each bands
-        grid_data.GetRasterBand(1).WriteArray(data)
-
-        # Lat/Lon WSG84 Spatial Reference System
-        srs = osr.SpatialReference()
-        srs.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
-
-        # Setup projection and geo-transform
-        grid_data.SetProjection(srs.ExportToWkt())
-        grid_data.SetGeoTransform(getGeoTransform(extent, nlines, ncols))
-
-        # Save the file
-        file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}.tif'
-        try:
-            os.makedirs(f"{save_path}/{waterpost_name}")
-            driver.CreateCopy(file_name, grid_data, 0)
-            print(f'Generated GeoTIFF: {file_name}')
-        except:
-            driver.CreateCopy(file_name, grid_data, 0)
-
-
-        # Close the file
-        driver = None
-        grid_data = None
-
-        # Delete the temp grid               
-        os.remove('grid_data')
-        
-        # ----------------------------
-        print(f'Tif for hstation_id: {waterpost_name}, with freq_name:{freq_name} saved')
-        # ----------------------------
+            # ----------------------------
+            print(f'Tif for hstation_id: {waterpost_name}, with freq_name:{freq_name} saved')
+            # ----------------------------
+        else:
+            dct = {
+                'hstst_id': int(waterpost_name), 
+                'lat': y_lat,
+                'lon': x_lon,
+                'frequency': frequency, 
+                'wtrdepth': wtrdepth, 
+                'wtrlvltime': wtrlvltime,
+                'success': 0
+            }
+            self.df_new = self.df_new.append(dct, ignore_index=True)
+            self.df_new.to_csv(f'{save_path}/{save.dt_string}_tifs_for_shape_calculated.csv', sep=';')
         
     
-    def compute_shapes(self, csv_data_path, DEMs_path, save_path):
+    def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path):
         # ---- Guard ---- 
         # TODO: Perform this shape functions
         # guard.data_is_not_none(data)
@@ -198,12 +228,22 @@ class Main():
         
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
+        
+        # Create success df
+        self.df_new = pd.DataFrame(columns=['hstst_id', 'lat', 'lon', 'frequency', 'wtrdepth', 'wtrlvltime', 'success'])
+        self.df_new = self.df_new.astype(dtype= {'hstst_id': 'int64', 
+                                                 'lat': 'float64', 
+                                                 'lon': 'float64',
+                                                 'frequency': 'float64', 
+                                                 'wtrdepth': 'float64', 
+                                                 'wtrlvltime': 'float64',
+                                                 'success': 'int64'})
     
         # For future save
-        dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        save.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
     
         unique_id = df['hstst_id'].unique()
-        for id in unique_id:
+        for id in tqdm(unique_id):
             temp_df = df[df['hstst_id'] == id]
 
             for i, row in temp_df.iterrows():
@@ -217,9 +257,6 @@ class Main():
                     'lenth': 10000
                 }
                 self.compute_shape(save_path, data_dict)
-            
-            
-            self._concat_shapes(data, save_path)
 
         
     def add_fields(self, dst_layer):

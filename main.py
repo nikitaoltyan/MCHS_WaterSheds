@@ -283,15 +283,14 @@ class Main():
         dst_layer.CreateField(field_name6)
 
         
-    def _concat_shapes(self, data, save_path):
+    def _concat_shapes(self, df, tifs_path, save_path):
         print('computing shape...')
-        waterpost_name = data[list(data.keys())[0]]['hsts_id']
         
         # this allows GDAL to throw Python Exceptions
         gdal.UseExceptions()
         dst_layername = 'result_union'
         dst_drv = ogr.GetDriverByName("ESRI Shapefile")
-        dst_file = f'{save_path}/{waterpost_name}/{waterpost_name}_{dst_layername}.shp'
+        dst_file = f'{save_path}/{self.dt_string}_{dst_layername}.shp'
 
         if os.path.exists(dst_file):
             dst_drv.DeleteDataSource(dst_file)
@@ -306,19 +305,22 @@ class Main():
 
         tmp_layername = 'temp'
         mem_drv = ogr.GetDriverByName("MEMORY")
-
-        for file_name, file_data in data.items():
-            print(file_name)
-            waterpost_name = file_data['hsts_id']
-            freq_name = file_data['frequency_name']
+        
+        for _, row in df.iterrows():
+            hsts_id = int(row[0])
+            frequency_name = self.__frequency_to_name(round(row[3], 1))
             tmp_ds = mem_drv.CreateDataSource('mem_temp_data')
             tmp_layer = tmp_ds.CreateLayer(tmp_layername, geom_type=ogr.wkbPolygon, srs = srs )
-
-            raster_file = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}/{file_name}'
+            
+            raster_file = f'{tifs_path}/{waterpost_name}/{waterpost_name}_{freq_name}.tif'
+            
+            if os.path.exists(raster_file):
+                continue
+            
             src_ds = gdal.Open(raster_file, gdal.GA_ReadOnly)
             srcband = src_ds.GetRasterBand(1)
             gdal.Polygonize(srcband, srcband, tmp_layer, -1, [], callback=None )
-
+            
             multi_poly = ogr.Geometry(ogr.wkbMultiPolygon)
 
             for poly in tmp_layer:
@@ -327,12 +329,12 @@ class Main():
             out_feature = ogr.Feature(dst_layer_defn)
             out_feature.SetGeometry(multi_poly)
 
-            out_feature.SetField('region_id', waterpost_name)
-            out_feature.SetField('LAT_Y', file_data['coordinate'][1])
-            out_feature.SetField('LON_X', file_data['coordinate'][0])
-            out_feature.SetField('frequency', file_data['frequency'])
-            out_feature.SetField('wtrdepth', file_data['wtrdepth'])
-            out_feature.SetField('wtrlvltime', file_data['wtrlvltime'])
+            out_feature.SetField('hsts_id', hsts_id)
+            out_feature.SetField('LAT_Y', row[1])
+            out_feature.SetField('LON_X', row[2])
+            out_feature.SetField('frequency', round(row[3], 1))
+            out_feature.SetField('wtrdepth', round(row[5], 2))
+            out_feature.SetField('wtrlvltime', round(row[6], 2))
 
             dst_layer.CreateFeature(out_feature)
 
@@ -348,6 +350,30 @@ class Main():
         print('DONE')
         # ----------------------------
         
+        
+        
+     def compute_union_shape(self, csv_data_path, tifs_path, save_path):
+        # ---- Guard ---- 
+        # TODO: Perform this shape functions
+        # guard.data_is_not_none(data)
+        # guard.data_contains_values(data
+
+        # ---- Compute ----
+        self.tifs_path = tifs_path
+        self.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        
+        df = pd.read_csv(csv_data_path, sep=';', decimal=',')
+        df['x_lon_int'] = df['lon'].values.astype(int)
+        df['y_lat_int'] = df['lat'].values.astype(int)
+        
+        # Sort df by x_lon and y_lat for future reduction of DEM computing
+        df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
+        
+        self._concat_shapes(df, tifs_path, save_path)
+        
+        # ----------------------------
+        print('DONE')
+        # ----------------------------
         
         
         

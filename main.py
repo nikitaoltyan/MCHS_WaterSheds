@@ -195,7 +195,7 @@ class Main():
                 'success': 1
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
-            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';')
+            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';', decimal=',', index=False)
 
             # ----------------------------
             print(f'Tif for hstation_id: {waterpost_name}, with freq_name:{freq_name} saved')
@@ -211,7 +211,7 @@ class Main():
                 'success': 0
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
-            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';')
+            self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';', decimal=',', index=False)
         
     
     def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path):
@@ -306,7 +306,7 @@ class Main():
         tmp_layername = 'temp'
         mem_drv = ogr.GetDriverByName("MEMORY")
         
-        for _, row in df.iterrows():
+        for _, row in tqdm(df.iterrows()):
             hsts_id = int(row[0])
             frequency_name = self.__frequency_to_name(round(row[3], 1))
             tmp_ds = mem_drv.CreateDataSource('mem_temp_data')
@@ -314,7 +314,7 @@ class Main():
             
             raster_file = f'{tifs_path}/{hsts_id}/{hsts_id}_{frequency_name}.tif'
             
-            if os.path.exists(raster_file):
+            if os.path.exists(raster_file) == False:
                 continue
             
             src_ds = gdal.Open(raster_file, gdal.GA_ReadOnly)
@@ -333,8 +333,8 @@ class Main():
             out_feature.SetField('LAT_Y', row[1])
             out_feature.SetField('LON_X', row[2])
             out_feature.SetField('frequency', round(row[3], 1))
-            out_feature.SetField('wtrdepth', round(row[5], 2))
-            out_feature.SetField('wtrlvltime', round(row[6], 2))
+            out_feature.SetField('wtrdepth', round(row[4], 2))
+            out_feature.SetField('wtrlvltime', round(row[5], 2))
 
             dst_layer.CreateFeature(out_feature)
 

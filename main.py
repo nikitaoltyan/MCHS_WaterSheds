@@ -3,39 +3,87 @@ import Graph
 import guard
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
+from datetime import datetime
 import numpy as np
 import pandas as pd
+from os import path
 import os
 import sys
+
+
 
 class Main():
   
     def __init__(self):
         self.shed = None
+        self.DEMs_path = None
+        self.lng_num = None
+        self.lat_num = None
         
         
-    def _compute_shed(self, file_path):
+    def _compute_shed(self, x_lon, y_lat):
         """Compute shed if it isn't exists
         """
-        if self.shed == None:
-            self.shed = WaterShed.WaterSheds(file_path, compute_acc=True)
+        lng_num, lat_num = int(x_lon), int(y_lat)
+        
+        if (self.lng_num != lng_num) or (self.lat_num != lat_num):
+            self.lng_num = lng_num
+            self.lat_num = lat_num
+          
+            self.tif_pathes = []
+            for i in range(lat_num-1, lat_num+2):
+                for j in range(lng_num-1, lng_num+2):
+                    lat = str(i)
+                    lng = ''.join((['0'] + list(str(int(j))))[-3:])
+                    file_name = f'n{lat}_e{lng}_1arc_v3.tif' if lat_num+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
+                    self.tif_pathes.append(f'{DEMs_path}/{file_name}')
+                    
+            # check if files 'exists'
+            success_list = []
+            for tif_path in self.tif_pathes:
+                if path.exists(tif_path) == False:
+                    print(f'{tif_path} is not exist in path {DEMs_path}')
+                    success_list.append(False)
+
+            # Download DEM and preprocess it
+            if len(success_list) == 0:
+                print('All required DEMs exist')
+                self.shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True)
+            
             return self.shed
         else:
             return self.shed
+          
+          
+    def __frequency_to_name(self, frequency):
+        if frequency == 0.5:
+            return '005'
+        elif frequency == 1.0:
+            return '01'
+        elif frequency == 5.0:
+            return '05'
+        elif frequency == 10.0:
+            return '10'
+        else:
+            return '20'
   
   
-    def compute_shape(self, tif_path, save_path, data_dict):
-        shed = self._compute_shed(tif_path)
-        
+    def compute_shape(self, save_path, data_dict):
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
         waterpost_name = data_dict['hsts_id']
-        top_left = (int(coordinate[0]), int(coordinate[1])+1)
-        bottom_right = (int(coordinate[0])+1, int(coordinate[1]))
         lenth = data_dict['lenth']
         target_h = data_dict['wtrdepth']
-
-        print('Computing flood for...')
+        
+        # Define coordinate of map to download 
+        (x_lon, y_lat) = coordinate
+      
+        # GEt WaterShed (precomputed or computed on demand)
+        shed = self._compute_shed(x_lon, y_lat)
+        
+        top_left = (lng_num-1, lat_num+2)
+        bottom_right = (lng_num+2, lat_num-1)
+          
         GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
         (shape, 
             flooded_nodes_down, 
@@ -114,9 +162,9 @@ class Main():
         grid_data.SetGeoTransform(getGeoTransform(extent, nlines, ncols))
 
         # Save the file
-        file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}/{waterpost_name}_{freq_name}.tif'
+        file_name = f'{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}.tif'
         try:
-            os.makedirs(f"{save_path}/{waterpost_name}/{waterpost_name}_{freq_name}")
+            os.makedirs(f"{save_path}/{waterpost_name}")
             driver.CreateCopy(file_name, grid_data, 0)
             print(f'Generated GeoTIFF: {file_name}')
         except:
@@ -131,32 +179,52 @@ class Main():
         os.remove('grid_data')
         
         # ----------------------------
-        print('Tif saved')
+        print(f'Tif for hstation_id: {waterpost_name}, with freq_name:{freq_name} saved')
         # ----------------------------
         
     
-    def compute_shapes(self, tif_path, save_path, data=None, excel_data_path=None):
-        if excel_data_path != None:
-            # ---- Guard ---- 
-            print('ERROR')
-            # ---- Compute ----
-            pass
+    def compute_shapes(self, csv_data_path, DEMs_path, save_path):
+        # ---- Guard ---- 
+        # TODO: Perform this shape functions
+        # guard.data_is_not_none(data)
+        # guard.data_contains_values(data
+
+        # ---- Compute ----
+        self.DEMs_path = DEMs_path
+        
+        df = pd.read_csv(csv_data_path, sep=';', decimal=',')
+        df['x_lon_int'] = df['lon'].values.astype(int)
+        df['y_lat_int'] = df['lat'].values.astype(int)
+        
+        # Sort df by x_lon and y_lat for future reduction of DEM computing
+        df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
+    
+        # For future save
+        dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+    
+        unique_id = df['hstst_id'].unique()
+        for id in unique_id:
+            temp_df = df[df['hstst_id'] == id]
+
+            for i, row in temp_df.iterrows():
+                data_dict = {
+                    'hsts_id': id,
+                    'coordinate': (row[1], row[2]),
+                    'frequency_name': self.__frequency_to_name(round(row[3], 1)),
+                    'frequency': round(row[3], 1),
+                    "wtrdepth": round(row[5], 2),
+                    'wtrlvltime': round(row[6], 2),
+                    'lenth': 10000
+                }
+                self.compute_shape(save_path, data_dict)
             
-        else:
-            # ---- Guard ---- 
-            guard.data_is_not_none(data)
-            guard.data_contains_values(data)
             
-            # ---- Compute ----
-            for d in data:
-                print(d)
-                self.compute_shape(tif_path, save_path, data[d])
             self._concat_shapes(data, save_path)
 
         
     def add_fields(self, dst_layer):
         # Создаю записи филдов, которые должны быть в шейп файле и задаю их тип
-        field_name = ogr.FieldDefn("region_id", ogr.OFTInteger)
+        field_name = ogr.FieldDefn("hsts_id", ogr.OFTInteger)
         field_name2 = ogr.FieldDefn("LAT_Y", ogr.OFTReal)
         field_name2.SetPrecision(6)
         field_name3 = ogr.FieldDefn("LON_X", ogr.OFTReal)

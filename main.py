@@ -240,7 +240,7 @@ class Main():
                                                  'success': 'int64'})
     
         # For future save
-        save.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        self.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
     
         unique_id = df['hstst_id'].unique()
         for id in tqdm(unique_id):

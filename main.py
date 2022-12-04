@@ -352,7 +352,7 @@ class Main():
         
         
         
-     def compute_union_shape(self, csv_data_path, tifs_path, save_path):
+    def compute_union_shape(self, csv_data_path, tifs_path, save_path):
         # ---- Guard ---- 
         # TODO: Perform this shape functions
         # guard.data_is_not_none(data)

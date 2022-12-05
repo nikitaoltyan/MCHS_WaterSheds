@@ -405,7 +405,7 @@ class Main():
         # ----------------------------
         
         
-   def compute_height_for_coordinate(self, DEMs_path, coordinate):
+    def compute_height_for_coordinate(self, DEMs_path, coordinate):
         # ---- Compute ----
         (x_lon, y_lat) = coordinate
         lng_num, lat_num = int(x_lon), int(y_lat)

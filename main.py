@@ -403,3 +403,20 @@ class Main():
         # ----------------------------
         print('DONE')
         # ----------------------------
+        
+        
+   def compute_height_for_coordinate(self, DEMs_path, coordinate)
+        # ---- Compute ----
+        (x_lon, y_lat) = coordinate
+        lng_num, lat_num = int(x_lon), int(y_lat)
+        lat = str(lat_num)
+        lng = ''.join((['0'] + list(str(int(lng_num))))[-3:])
+        file_name = f'n{lat}_e{lng}_1arc_v3.tif'
+        path = f'{DEMs_path}/{file_name}'
+        
+        Shed = WaterShed.WaterSheds(file_path=path, compute_acc=True)
+        top_left = (lng_num, lat_num+1)
+        bottom_right = (lng_num+1, lat_num)
+        
+        return Shed.dem[Shed.coordinate2point(coordinate, top_left, bottom_right)]
+      

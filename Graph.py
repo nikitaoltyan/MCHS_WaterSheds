@@ -100,7 +100,7 @@ class Graph():
                     'error': int(error)
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/{dt_string}_hydroposts_height_calculated.csv', sep=';')
+                self.df_new.to_csv(f'{save_path}/{dt_string}_hydroposts_height_calculated.csv', sep=';', decimal=',', index=False)
             else:
                 # here is save for error hydropost (corner hydropost without all DEMs)
                 dct = {
@@ -112,7 +112,7 @@ class Graph():
                     'error': 1
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/{dt_string}_hydroposts_height_calculated.csv', sep=';')
+                self.df_new.to_csv(f'{save_path}/{dt_string}_hydroposts_height_calculated.csv', sep=';', decimal=',', index=False)
 
     
 
@@ -502,7 +502,7 @@ class Graph():
                         'success': 0
                     }
                     self.df_new = self.df_new.append(dct, ignore_index=True)
-                    self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')
+                    self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';', decimal=',', index=False)
                     continue
 
                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
@@ -566,7 +566,7 @@ class Graph():
                     'success': 1
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')
+                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';', decimal=',', index=False)
                 
             else:
                 # here is save for error hydropost (corner hydropost without all DEMs)
@@ -575,4 +575,4 @@ class Graph():
                     'success': 0
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';')
+                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';', decimal=',', index=False)

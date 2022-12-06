@@ -400,7 +400,8 @@ class Graph():
             flooded_nodes_up += all_nodes
             all_out_nodes += out_nodes_log
 
-        return flood_area_acc.shape, flooded_nodes_down, flooded_nodes_up, all_out_nodes, flood_area_dem, h, point, lenth_with_offset
+        self.h = flood_area_dem[new_y, new_x] + target_h
+        return flood_area_acc.shape, flooded_nodes_down, flooded_nodes_up, all_out_nodes, flood_area_dem, self.h, point, lenth_with_offset
 
     
     def get_step(self, y_delta, x_delta):

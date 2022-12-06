@@ -100,7 +100,7 @@ class Main():
                 height, 
                 point_coord, 
                 offset
-            ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=uniform_flooding))
+            ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=uniform_flooding)
 
             new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
             for down_node in flooded_nodes_down:

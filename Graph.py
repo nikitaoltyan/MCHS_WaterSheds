@@ -274,7 +274,7 @@ class Graph():
     
     # Flood Part
 
-    def compute_flood(self, coordinate, top_left, bottom_right, lenth, target_h):
+    def compute_flood(self, coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=False):
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         y, x = point[0], point[1]
         lenth_with_offset = int(lenth/self.point_size_meteres + 40)  # For offset
@@ -303,15 +303,17 @@ class Graph():
                 self.G.add_edge(start, target)
 
         # Make flood
-        h = flood_area_dem[new_y, new_x] + target_h
+        if uniform_flooding == False:
+            self.h = flood_area_dem[new_y, new_x] + target_h
 
         flooded_nodes_down = []
         all_out_nodes = [] # For both up and down
-
         for i, node in enumerate(river_pathes_nodes_DOWN[::-1]): # Начинаем с последней затопленной клетки
             all_nodes = [node]
             nodes = [node]
             out_nodes_log = []
+            if uniform_flooding:
+                self.h = flood_area_dem[node[0], node[1]] + target_h
 
             while len(nodes) > 0:
                 node_ = nodes[0]
@@ -330,18 +332,18 @@ class Graph():
                     in_nodes.remove(list(intersection)[0]) # Удаление участков реки ниже. Чтобы обрабатывать только области у рек.
                     
 
-                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= h]
+                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= self.h]
                     
                 all_nodes += in_nodes_
                 nodes.append(in_nodes_)
 
                 # adding in-edge parts
-                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > h]
+                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > self.h]
                 
                 for out_node in out_nodes:
                     start, end = out_node, self.out_node_G(out_node)
                     start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
-                    height_rise = abs(end_height - h)
+                    height_rise = abs(end_height - self.h)
                     height_difference = abs(start_height - end_height)
                     meter_path = height_difference / self.point_size_meteres
                     point_path = round(height_rise / meter_path, 0) # * out of self.point_size_meteres (in meteres). From end (lower) to upper.
@@ -357,6 +359,8 @@ class Graph():
             all_nodes = [node]
             nodes = [node]
             out_nodes_log = []
+            if uniform_flooding:
+                self.h = flood_area_dem[node[0], node[1]] + target_h
 
             while len(nodes) > 0:
                 node_ = nodes[0]
@@ -373,18 +377,18 @@ class Graph():
                 if len(intersection) > 0:
                     in_nodes.remove(list(intersection)[0]) # Удаление участков реки ниже. Чтобы обрабатывать только области у рек.
                     
-                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= h]
+                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= self.h]
                     
                 all_nodes += in_nodes_
                 nodes.append(in_nodes_)
 
                 # adding in-edge parts
-                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > h]
+                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > self.h]
                 
                 for out_node in out_nodes:
                     start, end = out_node, self.out_node_G(out_node)
                     start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
-                    height_rise = abs(end_height - h)
+                    height_rise = abs(end_height - self.h)
                     height_difference = abs(start_height - end_height)
                     meter_path = height_difference / self.point_size_meteres
                     point_path = round(height_rise / meter_path, 0) # * out of self.point_size_meteres (in meteres). From end (lower) to upper.

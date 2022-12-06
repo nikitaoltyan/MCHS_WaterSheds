@@ -70,7 +70,7 @@ class Main():
             return '20'
   
   
-    def compute_shape(self, save_path, data_dict, uniform_flooding=False)):
+    def compute_shape(self, save_path, data_dict, uniform_flooding=False):
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
         frequency = data_dict['frequency']

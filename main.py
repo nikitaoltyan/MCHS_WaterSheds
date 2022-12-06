@@ -70,7 +70,7 @@ class Main():
             return '20'
   
   
-    def compute_shape(self, save_path, data_dict):
+    def compute_shape(self, save_path, data_dict, uniform_flooding=False)):
         coordinate = data_dict['coordinate']
         freq_name = data_dict['frequency_name']
         frequency = data_dict['frequency']
@@ -100,7 +100,7 @@ class Main():
                 height, 
                 point_coord, 
                 offset
-            ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h)
+            ) = GraphClass.compute_flood(coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=uniform_flooding))
 
             new_space_no_interpol = np.zeros((shape[0], shape[1]), dtype=np.uint8)
             for down_node in flooded_nodes_down:
@@ -214,7 +214,7 @@ class Main():
             self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';', decimal=',', index=False)
         
     
-    def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path):
+    def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path, uniform_flooding=False):
         # ---- Guard ---- 
         # TODO: Perform this shape functions
         # guard.data_is_not_none(data)
@@ -257,7 +257,7 @@ class Main():
                     'wtrlvltime': round(row[6], 2),
                     'lenth': 10000
                 }
-                self.compute_shape(save_path, data_dict)
+                self.compute_shape(save_path, data_dict, uniform_flooding=uniform_flooding)
 
         
     def add_fields(self, dst_layer):

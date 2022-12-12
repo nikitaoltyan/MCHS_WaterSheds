@@ -277,7 +277,7 @@ class Graph():
     def compute_flood(self, coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=False):
         point = self.coordinate2point(coordinate, top_left, bottom_right)
         y, x = point[0], point[1]
-        lenth_with_offset = int(lenth/self.point_size_meteres + 40)  # For offset
+        lenth_with_offset = int(lenth/(self.point_size_meteres * self.compression) + 40)  # For offset
         flood_area_fdir = self.fdir[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
         flood_area_dem = self.dem[y-lenth_with_offset:y+lenth_with_offset, x-lenth_with_offset:x+lenth_with_offset]
         flood_area_acc = self.acc.copy()

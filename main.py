@@ -49,7 +49,7 @@ class Main():
             # Download DEM and preprocess it
             if len(success_list) == 0:
                 print('All required DEMs exist')
-                self.shed = WaterShed.WaterSheds(files_pathes=self.tif_pathes, compute_acc=True)
+                self.shed = WaterShed.WaterSheds(files_pathes=self.tif_pathes, compute_acc=True, compression=2)
                 return self.shed
             else:
                 return None
@@ -91,7 +91,7 @@ class Main():
             top_left = (lng_num-1, lat_num+2)
             bottom_right = (lng_num+2, lat_num-1)
 
-            GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc)
+            GraphClass = Graph.Graph(dem=shed.dem, fdir=shed.fdir, acc=shed.acc, compression=shed.compression_coef)
             (shape, 
                 flooded_nodes_down, 
                 flooded_nodes_up,

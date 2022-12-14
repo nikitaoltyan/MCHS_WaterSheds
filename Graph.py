@@ -3,6 +3,7 @@ import WaterShed
 import pandas as pd
 import numpy as np
 from numpy import unravel_index
+import pytz
 from datetime import datetime
 import networkx as nx
 from tqdm import tqdm
@@ -29,7 +30,7 @@ class Graph():
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
-        dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
         self.df_new = pd.DataFrame(columns=['hstation_id', 'x_lon', 'y_lat', 'height', 'distance_m', 'error'])
         self.df_new = self.df_new.astype(dtype= {'hstation_id':'int64', 'height':'int64', 'distance_m':'int64', 'error':'int64'})
         x_lon_past, y_lat_past = None, None

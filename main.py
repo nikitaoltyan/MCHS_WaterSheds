@@ -22,7 +22,7 @@ class Main():
         self.lat_num = None
         
         
-    def _compute_shed(self, x_lon, y_lat):
+    def _compute_shed(self, x_lon, y_lat, compression):
         """Compute shed if it isn't exists
         """
         lng_num, lat_num = int(x_lon), int(y_lat)
@@ -49,7 +49,7 @@ class Main():
             # Download DEM and preprocess it
             if len(success_list) == 0:
                 print('All required DEMs exist')
-                self.shed = WaterShed.WaterSheds(files_pathes=self.tif_pathes, compute_acc=True, compression=2)
+                self.shed = WaterShed.WaterSheds(files_pathes=self.tif_pathes, compute_acc=True, compression=compression)
                 return self.shed
             else:
                 return None
@@ -77,6 +77,7 @@ class Main():
         waterpost_name = int(data_dict['hsts_id'])
         wtrdepth = data_dict['wtrdepth']
         wtrlvltime = data_dict['wtrlvltime']
+        compression = data_dict['compression']
         lenth = data_dict['lenth']
         target_h = data_dict['wtrdepth']
         
@@ -84,7 +85,7 @@ class Main():
         (x_lon, y_lat) = coordinate
       
         # Get WaterShed (precomputed or computed on demand)
-        shed = self._compute_shed(x_lon, y_lat)
+        shed = self._compute_shed(x_lon, y_lat, compression)
         
         lng_num, lat_num = int(x_lon), int(y_lat)
         if shed is not None:
@@ -214,6 +215,7 @@ class Main():
             self.df_new.to_csv(f'{save_path}/{self.dt_string}_tifs_for_shape_calculated.csv', sep=';', decimal=',', index=False)
         
     
+    
     def compute_tifs_for_shapes(self, csv_data_path, DEMs_path, save_path, uniform_flooding=False):
         # ---- Guard ---- 
         # TODO: Perform this shape functions
@@ -255,9 +257,15 @@ class Main():
                     'frequency': round(row[3], 1),
                     "wtrdepth": round(row[5], 2),
                     'wtrlvltime': round(row[6], 2),
+                    'compression': int(row[7]),
                     'lenth': 10000
                 }
                 self.compute_shape(save_path, data_dict, uniform_flooding=uniform_flooding)
+                
+        # ----------------------------
+        print('DONE')
+        # ----------------------------
+                
 
         
     def add_fields(self, dst_layer):
@@ -282,6 +290,7 @@ class Main():
         dst_layer.CreateField(field_name5)
         dst_layer.CreateField(field_name6)
 
+        
         
     def _concat_shapes(self, df, tifs_path, save_path):
         print('computing shape...')
@@ -391,6 +400,7 @@ class Main():
         # ----------------------------
         
         
+        
     def compute_river_slices(self, excel_path, DEMs_path, save_path):
         # ---- Guard ---- 
         df = pd.read_csv(excel_path, sep=';', decimal=',')
@@ -403,6 +413,7 @@ class Main():
         # ----------------------------
         print('DONE')
         # ----------------------------
+        
         
         
     def compute_height_for_coordinate(self, DEMs_path, coordinate):

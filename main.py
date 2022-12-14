@@ -3,6 +3,7 @@ import Graph
 import guard
 
 from osgeo import gdal, osr, ogr # Python bindings for GDAL
+import pytz
 from datetime import datetime
 from tqdm import tqdm
 import numpy as np
@@ -243,7 +244,7 @@ class Main():
                                                  'success': 'int64'})
     
         # For future save
-        self.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        self.dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
     
         unique_id = df['hstst_id'].unique()
         for id in tqdm(unique_id):
@@ -369,7 +370,7 @@ class Main():
 
         # ---- Compute ----
         self.tifs_path = tifs_path
-        self.dt_string = datetime.now().strftime("%d_%m_%Y__%H:%M")
+        self.dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
         
         df = pd.read_csv(csv_data_path, sep=';', decimal=',')
         df['x_lon_int'] = df['lon'].values.astype(int)

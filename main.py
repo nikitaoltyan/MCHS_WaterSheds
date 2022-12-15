@@ -432,3 +432,31 @@ class Main():
         
         return Shed.dem[Shed.coordinate2point(coordinate, top_left, bottom_right)]
       
+
+      
+    def compute_watershed_area(self, coordinate, top_left, bottom_right, DEMs_path, compress_coef=1):
+        # ---- Compute path---- 
+        x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
+
+        tif_pathes = []
+        for i in range(y_path):
+            for j in range(x_path):
+                tif_pathes.append(f'{DEMs_path}/n{bottom_right[1] + i}_e{top_left[0] + j}_1arc_v3.tif')
+                
+        success_list = []
+        for tif_path in tif_pathes:
+            if path.exists(tif_path) == False:
+                print(f'{tif_path} is not exist in path {DEMs_path}')
+                success_list.append(False)
+
+        if len(success_list) != 0:
+            return None
+                
+        # ---- Compute ---- 
+        # Download DEM and preprocess it
+        shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
+        
+        watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
+        
+        return f'{watershed_area} км^2'
+        

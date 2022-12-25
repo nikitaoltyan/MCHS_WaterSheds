@@ -423,7 +423,7 @@ class Main():
         lng_num, lat_num = int(x_lon), int(y_lat)
         lat = str(lat_num)
         lng = ''.join((['0'] + list(str(int(lng_num))))[-3:])
-        file_name = f'n{lat}_e{lng}_1arc_v3.tif'
+        file_name = f'n{lat}_e{lng}_1arc_v3.tif' if lat_num+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
         path = f'{DEMs_path}/{file_name}'
         
         Shed = WaterShed.WaterSheds(file_path=path, compute_acc=True)

@@ -53,8 +53,10 @@ class Graph():
                 
                 if lat_num+1 < 60:
                     self.point_size_meteres = 35
+                    self.compression = 2
                 else:
                     self.point_size_meteres = 65
+                    self.compression = 1
 
                 self.tif_pathes = []
                 for i in range(lat_num-1, lat_num+2):
@@ -74,7 +76,7 @@ class Graph():
                  # Download DEM and preprocess it
                 if len(success_list) == 0:
                     print('All required DEMs exist')
-                    self.compute_DEM(self.tif_pathes, lng_num, lat_num)
+                    self.compute_DEM(self.tif_pathes, lng_num, lat_num, compression=self.compression)
                 else:
                     # Temporary while I'm thinking what to with others frames DEMs
                     print('Not all required DEMs exist')

@@ -439,8 +439,8 @@ class Main():
         x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
         
         tif_pathes = []
-        for i in range(lat_num-1, lat_num+2):
-            for j in range(lng_num-1, lng_num+2):
+        for i in range(y_path):
+            for j in range(x_path):
                 lat = str(bottom_right[1] + i)
                 lng = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
                 file_name = f'n{lat}_e{lng}_1arc_v3.tif' if top_left[1]+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'

@@ -434,32 +434,104 @@ class Main():
       
 
       
-    def compute_watershed_area(self, coordinate, top_left, bottom_right, DEMs_path, compress_coef=1):
-        # ---- Compute path---- 
-        x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
-        
-        tif_pathes = []
-        for i in range(y_path):
-            for j in range(x_path):
-                lat = str(bottom_right[1] + i)
-                lng = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
-                file_name = f'n{lat}_e{lng}_1arc_v3.tif' if top_left[1]+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
-                tif_pathes.append(f'{DEMs_path}/{file_name}')
-                
-        success_list = []
-        for tif_path in tif_pathes:
-            if path.exists(tif_path) == False:
-                print(f'{tif_path} is not exist in path {DEMs_path}')
-                success_list.append(False)
+    def compute_watershed_area(self, DEMs_path, csv_data_path=None, save_path=None, coordinate=None, top_left=None, bottom_right=None, compress_coef=1):
 
-        if len(success_list) != 0:
-            return None
+        if (coordinate is not None) and (top_left is not None) and (bottom_right is not None):
+            # ---- Compute path if only one point passed ---- 
+            x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
+
+            tif_pathes = []
+            for i in range(y_path):
+                for j in range(x_path):
+                    lat = str(bottom_right[1] + i)
+                    lng = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
+                    file_name = f'n{lat}_e{lng}_1arc_v3.tif' if top_left[1]+1 < 60 else f'n{lat}_e{lng}_1arc_v3_1201x1201.tif'
+                    tif_pathes.append(f'{DEMs_path}/{file_name}')
+
+            success_list = []
+            for tif_path in tif_pathes:
+                if path.exists(tif_path) == False:
+                    print(f'{tif_path} is not exist in path {DEMs_path}')
+                    success_list.append(False)
+
+            if len(success_list) != 0:
+                return None
+
+            # ---- Compute ---- 
+            # Download DEM and preprocess it
+            shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
+
+            watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
+
+            return f'{watershed_area} км^2'
+          
+          
+        elif (csv_data_path is not None) and (save_path is not None):
+            df = pd.read_csv(csv_data_path, sep=';', decimal=',')
+            
+            # Create success df
+            df_new = pd.DataFrame(columns=['hstst_id', 'lat', 'lon', 'watershed_area', 'success'])
+            df_new = df_new.astype(dtype= {'hstst_id': 'int64', 
+                                                'lat': 'float64', 
+                                                'lon': 'float64',
+                                                'watershed_area': 'float64',
+                                                'success': 'int64'})
+
+            # For future save
+            dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
+            
+            # iterate over points to calculate water area
+            for i, row in df.iterrows():
+                hstst_id = row[0]
+                lat = row[1]
+                lon = row[2]
+                top_left = tuple(map(float, row[3].replace('(', '').replace(')', '').split(', ')))
+                bottom_right = tuple(map(float, row[4].replace('(', '').replace(')', '').split(', ')))
+                compress_coef = row[5]
+                coordinate = (lon, lat)
                 
-        # ---- Compute ---- 
-        # Download DEM and preprocess it
-        shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
-        
-        watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
-        
-        return f'{watershed_area} км^2'
-        
+                print(f'Processing hstst_id {hstst_id}...')
+                
+                # ---- Compute path for point ---- 
+                x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
+
+                tif_pathes = []
+                for i in range(y_path):
+                    for j in range(x_path):
+                        lat = str(bottom_right[1] + i)
+                        lon = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
+                        file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 < 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
+                        tif_pathes.append(f'{DEMs_path}/{file_name}')
+
+                success_list = []
+                for tif_path in tif_pathes:
+                    if path.exists(tif_path) == False:
+                        print(f'{tif_path} is not exist in path {DEMs_path}')
+                        success_list.append(False)
+
+                if len(success_list) != 0:
+                    return None
+
+                # ---- Compute ---- 
+                # Download DEM and preprocess it
+                shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
+
+                watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
+                print(f'Watershed area for hstst_id {hstst_id} was calculated')
+                
+                # Save result
+                dct = {
+                    'hstst_id': int(hstst_id), 
+                    'lat': lat,
+                    'lon': lon,
+                    'watershed_area': watershed_area,
+                    'success': 1
+                }
+                df_new = df_new.append(dct, ignore_index=True)
+                df_new.to_csv(f'{save_path}/{dt_string}_watershed_area.csv', sep=';', decimal=',', index=False)
+                
+            
+        else:
+            print('Not all veriables passed')
+            print('Try using csv_data_path={csv_path}, save_path={save_path} for file with miltiple inputs')
+            print('Try using coordinate={point_coordinate}, top_left={top_left_coordinate}, bottom_right={bottom_right_coordinate} for one point input')

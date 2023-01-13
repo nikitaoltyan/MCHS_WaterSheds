@@ -483,12 +483,12 @@ class Main():
             # iterate over points to calculate water area
             for i, row in df.iterrows():
                 hstst_id = row[0]
-                lat = row[1]
-                lon = row[2]
+                lat = float(row[1])
+                lon = float(row[2])
                 top_left = tuple(map(int, row[3].replace('(', '').replace(')', '').split(', ')))
                 bottom_right = tuple(map(int, row[4].replace('(', '').replace(')', '').split(', ')))
                 compress_coef = row[5]
-                coordinate = (lon, lat)
+                coordinate = (lat, lon)
                 
                 print(f'Processing hstst_id {hstst_id}...')
                 

@@ -485,8 +485,8 @@ class Main():
                 hstst_id = row[0]
                 lat = row[1]
                 lon = row[2]
-                top_left = tuple(map(float, row[3].replace('(', '').replace(')', '').split(', ')))
-                bottom_right = tuple(map(float, row[4].replace('(', '').replace(')', '').split(', ')))
+                top_left = tuple(map(int, row[3].replace('(', '').replace(')', '').split(', ')))
+                bottom_right = tuple(map(int, row[4].replace('(', '').replace(')', '').split(', ')))
                 compress_coef = row[5]
                 coordinate = (lon, lat)
                 

@@ -194,6 +194,7 @@ class Main():
                 'frequency': frequency, 
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
+                'lenth': lenth,
                 'success': 1
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
@@ -210,6 +211,7 @@ class Main():
                 'frequency': frequency, 
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
+                'lenth': lenth,
                 'success': 0
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
@@ -241,6 +243,7 @@ class Main():
                                                  'frequency': 'float64', 
                                                  'wtrdepth': 'float64', 
                                                  'wtrlvltime': 'float64',
+                                                 'lenth': 'int64',
                                                  'success': 'int64'})
     
         # For future save
@@ -258,8 +261,8 @@ class Main():
                     'frequency': round(row[3], 1),
                     "wtrdepth": round(row[5], 2),
                     'wtrlvltime': round(row[6], 2),
-                    'compression': int(row[7]),
-                    'lenth': 10000
+                    'compression': int(row[8]),
+                    'lenth': int(row[7])
                 }
                 self.compute_shape(save_path, data_dict, uniform_flooding=uniform_flooding)
                 

@@ -503,7 +503,7 @@ class Main():
                     for j in range(x_path):
                         lat = str(bottom_right[1] + i)
                         lon = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
-                        file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 < 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
+                        file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 <= 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
                         tif_pathes.append(f'{DEMs_path}/{file_name}')
 
                 success_list = []

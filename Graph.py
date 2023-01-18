@@ -484,7 +484,8 @@ class Graph():
             if self.dem is not None:
                 point = self.coordinate2point(coordinate, top_left, bottom_right)
             
-                new_top_left, new_bottom_right = (point[0]-70, point[1]-70), (point[0]+70, point[1]+70)
+                # Coordinates for defining river path
+                new_top_left, new_bottom_right = (point[0]-20, point[1]-20), (point[0]+20, point[1]+20)
                 cut_fdir = self.fdir[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
                 cut_acc = self.acc[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
                 cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
@@ -494,7 +495,7 @@ class Graph():
                 shape = cut_fdir.shape
 
                 try:
-                    for row in tqdm(range(1, shape[0]-1)):
+                    for row in range(1, shape[0]-1):
                         for column in range(1, shape[1]-1):
                             dir = cut_fdir[row, column]
                             start = (row, column)
@@ -528,17 +529,25 @@ class Graph():
                 while len(ins) < 5:
                     in_ = in_node_G(ins[-1])
                     ins.append(in_)
+                    
+                
+                # Coordinates for river shape
+                new_top_left, new_bottom_right = (point[0]-550, point[1]-550), (point[0]+550, point[1]+550)
+                cut_fdir = self.fdir[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+                cut_acc = self.acc[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+                cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
 
                 start, end = ins[-1], outs[-1]
                 y_delta, x_delta = end[0] - start[0], end[1] - start[1]
 
                 step = self.get_step(y_delta, x_delta)
+                real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
                 target_height = cut_dem[real_coord] + 15
                 start = real_coord
 
                 right_heights = [cut_dem[real_coord]]
                 right_coords = [real_coord]
-                while (max(right_heights) < target_height) and (len(right_heights) < 65):
+                while (max(right_heights) < target_height) and (len(right_heights) < 540):
                     start = [sum(x) for x in zip(start, step)]
                     height = cut_dem[start[0], start[1]]
                     right_heights.append(height)
@@ -548,7 +557,7 @@ class Graph():
                 step = [-i for i in step]
                 left_heights = [cut_dem[real_coord]]
                 left_coords = [real_coord]
-                while (max(left_heights) < target_height) and (len(left_heights) < 65):
+                while (max(left_heights) < target_height) and (len(left_heights) < 540):
                     start = [sum(x) for x in zip(start, step)]
                     height = cut_dem[start[0], start[1]]
                     left_heights.append(height)
@@ -563,6 +572,7 @@ class Graph():
 
                 path_to_csv = f'{save_path}/{hstation_id}/{hstation_id}_river_slice.csv'
                 final_df = pd.DataFrame({'HEIGHTS': river_slice, 'WaterpostFlag': coords_bin_slice})
+                final_df['meteres_path'] = 30 if lat_num+1 <= 60 else 60
                 final_df.to_csv(path_to_csv, index=False, sep=';')
                 
                 dct = {

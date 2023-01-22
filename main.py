@@ -189,8 +189,8 @@ class Main():
             
             dct = {
                 'hstst_id': int(waterpost_name), 
-                'lat': y_lat,
-                'lon': x_lon,
+                'lat_y': y_lat,
+                'lon_x': x_lon,
                 'frequency': frequency, 
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
@@ -206,8 +206,8 @@ class Main():
         else:
             dct = {
                 'hstst_id': int(waterpost_name), 
-                'lat': y_lat,
-                'lon': x_lon,
+                'lat_y': y_lat,
+                'lon_x': x_lon,
                 'frequency': frequency, 
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
@@ -229,17 +229,17 @@ class Main():
         self.DEMs_path = DEMs_path
         
         df = pd.read_csv(csv_data_path, sep=';', decimal=',')
-        df['x_lon_int'] = df['lon'].values.astype(int)
-        df['y_lat_int'] = df['lat'].values.astype(int)
+        df['x_lon_int'] = df['lon_x'].values.astype(int)
+        df['y_lat_int'] = df['lat_y'].values.astype(int)
         
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
         # Create success df
-        self.df_new = pd.DataFrame(columns=['hstst_id', 'lat', 'lon', 'frequency', 'wtrdepth', 'wtrlvltime', 'success'])
+        self.df_new = pd.DataFrame(columns=['hstst_id', 'lat_y', 'lon_x', 'frequency', 'wtrdepth', 'wtrlvltime', 'success'])
         self.df_new = self.df_new.astype(dtype= {'hstst_id': 'int64', 
-                                                 'lat': 'float64', 
-                                                 'lon': 'float64',
+                                                 'lat_y': 'float64', 
+                                                 'lon_x': 'float64',
                                                  'frequency': 'float64', 
                                                  'wtrdepth': 'float64', 
                                                  'wtrlvltime': 'float64',
@@ -256,7 +256,7 @@ class Main():
             for i, row in temp_df.iterrows():
                 data_dict = {
                     'hsts_id': id,
-                    'coordinate': (row[1], row[2]),
+                    'coordinate': (row[2], row[1]),
                     'frequency_name': self.__frequency_to_name(round(row[3], 1)),
                     'frequency': round(row[3], 1),
                     "wtrdepth": round(row[5], 2),
@@ -343,8 +343,8 @@ class Main():
             out_feature.SetGeometry(multi_poly)
 
             out_feature.SetField('hsts_id', hsts_id)
-            out_feature.SetField('LAT_Y', row[1])
-            out_feature.SetField('LON_X', row[2])
+            out_feature.SetField('lat_y', row[1])
+            out_feature.SetField('lon_x', row[2])
             out_feature.SetField('frequency', round(row[3], 1))
             out_feature.SetField('wtrdepth', round(row[4], 2))
             out_feature.SetField('wtrlvltime', round(row[5], 2))
@@ -376,8 +376,8 @@ class Main():
         self.dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
         
         df = pd.read_csv(csv_data_path, sep=';', decimal=',')
-        df['x_lon_int'] = df['lon'].values.astype(int)
-        df['y_lat_int'] = df['lat'].values.astype(int)
+        df['x_lon_int'] = df['lon_x'].values.astype(int)
+        df['y_lat_int'] = df['lat_y'].values.astype(int)
         
         # Sort df by x_lon and y_lat for future reduction of DEM computing
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")

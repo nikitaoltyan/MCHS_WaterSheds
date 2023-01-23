@@ -320,6 +320,7 @@ class Main():
         mem_drv = ogr.GetDriverByName("MEMORY")
         
         for _, row in tqdm(df.iterrows()):
+            print(row)
             hsts_id = int(row[0])
             frequency_name = self.__frequency_to_name(round(row[3], 1))
             tmp_ds = mem_drv.CreateDataSource('mem_temp_data')

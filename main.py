@@ -346,8 +346,8 @@ class Main():
             out_feature.SetField('lat_y', row[1])
             out_feature.SetField('lon_x', row[2])
             out_feature.SetField('frequency', round(row[3], 1))
-            out_feature.SetField('wtrdepth', round(row[4], 2))
-            out_feature.SetField('wtrlvltime', round(row[5], 2))
+            out_feature.SetField('wtrdepth', round(row[5], 2))
+            out_feature.SetField('wtrlvltime', round(row[6], 2))
 
             dst_layer.CreateFeature(out_feature)
 

@@ -236,7 +236,7 @@ class Main():
         df.sort_values(['x_lon_int', 'y_lat_int'], axis = 0, ascending = True, inplace = True, na_position = "first")
         
         # Create success df
-        self.df_new = pd.DataFrame(columns=['hstst_id', 'lat_y', 'lon_x', 'frequency', 'wtrdepth', 'wtrlvltime', 'success'])
+        self.df_new = pd.DataFrame(columns=['hstst_id', 'lat_y', 'lon_x', 'frequency', 'wtrdepth', 'wtrlvltime', 'lenth', 'success'])
         self.df_new = self.df_new.astype(dtype= {'hstst_id': 'int64', 
                                                  'lat_y': 'float64', 
                                                  'lon_x': 'float64',

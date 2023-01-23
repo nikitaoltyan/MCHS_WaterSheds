@@ -275,9 +275,9 @@ class Main():
     def add_fields(self, dst_layer):
         # Создаю записи филдов, которые должны быть в шейп файле и задаю их тип
         field_name = ogr.FieldDefn("hsts_id", ogr.OFTInteger)
-        field_name2 = ogr.FieldDefn("LAT_Y", ogr.OFTReal)
+        field_name2 = ogr.FieldDefn("lat_y", ogr.OFTReal)
         field_name2.SetPrecision(6)
-        field_name3 = ogr.FieldDefn("LON_X", ogr.OFTReal)
+        field_name3 = ogr.FieldDefn("lon_x", ogr.OFTReal)
         field_name3.SetPrecision(6)
         field_name4 = ogr.FieldDefn("frequency", ogr.OFTReal)
         field_name4.SetPrecision(2)
@@ -320,7 +320,6 @@ class Main():
         mem_drv = ogr.GetDriverByName("MEMORY")
         
         for _, row in tqdm(df.iterrows()):
-            print(row)
             hsts_id = int(row[0])
             frequency_name = self.__frequency_to_name(round(row[3], 1))
             tmp_ds = mem_drv.CreateDataSource('mem_temp_data')

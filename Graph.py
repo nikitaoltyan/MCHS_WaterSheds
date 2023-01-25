@@ -434,6 +434,9 @@ class Graph():
         # Creat new df to save successes of river slices
         self.df_new = pd.DataFrame(columns=['hstation_id', 'success'])
         
+        # For future save
+        self.dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
+        
         x_lon_past, y_lat_past = None, None
         
         for i, row in df.iterrows():
@@ -530,36 +533,48 @@ class Graph():
                     in_ = in_node_G(ins[-1])
                     ins.append(in_)
                     
+                # Clearing instances
+                del G, new_top_left, new_bottom_right, cut_fdir, cut_acc, cut_dem
+                    
                 
                 # Coordinates for river shape
-                new_top_left, new_bottom_right = (point[0]-550, point[1]-550), (point[0]+550, point[1]+550)
-                cut_fdir = self.fdir[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
-                cut_acc = self.acc[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
-                cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+#                 new_top_left, new_bottom_right = (point[0]-550, point[1]-550), (point[0]+550, point[1]+550)
+#                 cut_fdir = self.fdir[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+#                 cut_acc = self.acc[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
+#                 cut_dem = self.dem[new_top_left[0]:new_bottom_right[0], new_top_left[1]:new_bottom_right[1]]
 
                 start, end = ins[-1], outs[-1]
                 y_delta, x_delta = end[0] - start[0], end[1] - start[1]
 
                 step = self.get_step(y_delta, x_delta)
-                real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
-                target_height = cut_dem[real_coord] + 15
-                start = real_coord
+#                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
+#                 target_height = cut_dem[real_coord] + 15
+                target_height = cut_dem[point] + 15
+#                 start = real_coord
+                start = point
 
-                right_heights = [cut_dem[real_coord]]
-                right_coords = [real_coord]
+#                 right_heights = [self.dem[real_coord]]
+#                 right_coords = [real_coord]
+                right_heights = [self.dem[point]]
+                right_coords = [point]
                 while (max(right_heights) < target_height) and (len(right_heights) < 540):
                     start = [sum(x) for x in zip(start, step)]
-                    height = cut_dem[start[0], start[1]]
+#                     height = cut_dem[start[0], start[1]]
+                    height = self.dem[start[0], start[1]]
                     right_heights.append(height)
                     right_coords.append(start)
 
-                start = real_coord
+#                 start = real_coord
+                start = point
                 step = [-i for i in step]
-                left_heights = [cut_dem[real_coord]]
-                left_coords = [real_coord]
+#                 left_heights = [cut_dem[real_coord]]
+#                 left_coords = [real_coord]
+                left_heights = [self.dem[point]]
+                left_coords = [point]
                 while (max(left_heights) < target_height) and (len(left_heights) < 540):
                     start = [sum(x) for x in zip(start, step)]
-                    height = cut_dem[start[0], start[1]]
+#                     height = cut_dem[start[0], start[1]]
+                    height = self.dem[start[0], start[1]]
                     left_heights.append(height)
                     left_coords.append(start)
 
@@ -580,7 +595,7 @@ class Graph():
                     'success': 1
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';', decimal=',', index=False)
+                self.df_new.to_csv(f'{save_path}/{self.dt_string}_river_slice_success_table.csv', sep=';', decimal=',', index=False)
                 
             else:
                 # here is save for error hydropost (corner hydropost without all DEMs)
@@ -589,4 +604,4 @@ class Graph():
                     'success': 0
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
-                self.df_new.to_csv(f'{save_path}/river_slice_success_table.csv', sep=';', decimal=',', index=False)
+                self.df_new.to_csv(f'{save_path}/{self.dt_string}_river_slice_success_table.csv', sep=';', decimal=',', index=False)

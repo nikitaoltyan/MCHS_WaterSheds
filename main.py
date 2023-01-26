@@ -337,7 +337,10 @@ class Main():
             multi_poly = ogr.Geometry(ogr.wkbMultiPolygon)
 
             for poly in tmp_layer:
-                multi_poly = multi_poly.Union(poly.geometry())
+                if multi_poly is not None:
+                    multi_poly = multi_poly.Union(poly.geometry())
+                else:
+                    pass
 
             out_feature = ogr.Feature(dst_layer_defn)
             out_feature.SetGeometry(multi_poly)

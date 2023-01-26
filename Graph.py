@@ -443,6 +443,7 @@ class Graph():
             print(f'{i+1}/{df.shape[0]} hydropost...')
             hstation_id  = int(row[0])
             x_lon, y_lat = row[1], row[2]
+            max_height = int(row[3])
             coordinate = (x_lon, y_lat)
         
             # Define coordinate of map to download 
@@ -549,7 +550,7 @@ class Graph():
                 step = self.get_step(y_delta, x_delta)
 #                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
 #                 target_height = cut_dem[real_coord] + 15
-                target_height = cut_dem[point] + 15
+                target_height = cut_dem[point] + max_height
 #                 start = real_coord
                 start = point
 
@@ -592,6 +593,7 @@ class Graph():
                 
                 dct = {
                     'hstation_id': hstation_id, 
+                    'max_height': max_height,
                     'success': 1
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)
@@ -600,7 +602,8 @@ class Graph():
             else:
                 # here is save for error hydropost (corner hydropost without all DEMs)
                 dct = {
-                    'hstation_id': hstation_id, 
+                    'hstation_id': hstation_id,
+                    'max_height': max_height,
                     'success': 0
                 }
                 self.df_new = self.df_new.append(dct, ignore_index=True)

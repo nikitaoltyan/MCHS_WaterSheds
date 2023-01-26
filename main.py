@@ -407,8 +407,8 @@ class Main():
         
     def compute_river_slices(self, excel_path, DEMs_path, save_path):
         # ---- Guard ---- 
-        df = pd.read_csv(excel_path, sep=';', decimal=',')
-        guard.height_data_contains_columns(df)
+#         df = pd.read_csv(excel_path, sep=';', decimal=',')
+#         guard.height_data_contains_columns(df)
           
         # ---- Compute ----
         GraphClass = Graph.Graph()

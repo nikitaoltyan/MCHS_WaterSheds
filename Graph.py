@@ -550,7 +550,7 @@ class Graph():
                 step = self.get_step(y_delta, x_delta)
 #                 real_coord = (point[0] - new_top_left[0], point[1] - new_top_left[1])
 #                 target_height = cut_dem[real_coord] + 15
-                target_height = cut_dem[point] + max_height
+                target_height = self.dem[point] + max_height
 #                 start = real_coord
                 start = point
 

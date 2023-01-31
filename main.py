@@ -337,10 +337,12 @@ class Main():
             multi_poly = ogr.Geometry(ogr.wkbMultiPolygon)
 
             for poly in tmp_layer:
-                if multi_poly is not None:
-                    multi_poly = multi_poly.Union(poly.geometry())
+                geom = poly.GetGeometryRef()
+                if geom.IsValid():
+                    multi_poly = multi_poly.Union(geom)
                 else:
-                    pass
+                    clean = geom.Buffer(0)
+                    multi_poly = multi_poly.Union(clean)
 
             out_feature = ogr.Feature(dst_layer_defn)
             out_feature.SetGeometry(multi_poly)

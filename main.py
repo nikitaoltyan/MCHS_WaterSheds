@@ -489,54 +489,114 @@ class Main():
             dt_string = datetime.now(pytz.timezone('Europe/Moscow')).strftime("%d_%m_%Y__%H:%M")
             
             # iterate over points to calculate water area
-            for i, row in df.iterrows():
-                hstst_id = row[0]
-                lat = float(row[1])
-                lon = float(row[2])
-                top_left = tuple(map(int, row[3].replace('(', '').replace(')', '').split(', ')))
-                bottom_right = tuple(map(int, row[4].replace('(', '').replace(')', '').split(', ')))
-                compress_coef = row[5]
-                coordinate = (lat, lon)
+            df['top_left_bottom_right'] = df['top_left'] + df['bottom_right']
+            unique_areas = df['top_left_bottom_right'].unique()
+            for id in tqdm(unique_areas):
+                temp_df = df[df['top_left_bottom_right'] == id]
+                dem_computed = False
                 
-                print(f'Processing hstst_id {hstst_id}...')
+                for i, row in temp_df.iterrows():
+                    hstst_id = row[0]
+                    lat = float(row[1])
+                    lon = float(row[2])
+                    top_left = tuple(map(int, row[3].replace('(', '').replace(')', '').split(', ')))
+                    bottom_right = tuple(map(int, row[4].replace('(', '').replace(')', '').split(', ')))
+                    compress_coef = row[5]
+                    coordinate = (lat, lon)
+                    
+                    print(f'Processing hstst_id {hstst_id}...')
+                    
+                    # ---- Compute path for point ----
+                    if dem_computed == False:
+                        x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
+
+                        tif_pathes = []
+                        for i in range(y_path):
+                            for j in range(x_path):
+                                lat = str(bottom_right[1] + i)
+                                lon = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
+                                file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 <= 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
+                                tif_pathes.append(f'{DEMs_path}/{file_name}')
+
+                        success_list = []
+                        for tif_path in tif_pathes:
+                            if path.exists(tif_path) == False:
+                                print(f'{tif_path} is not exist in path {DEMs_path}')
+                                success_list.append(False)
+
+                        if len(success_list) != 0:
+                            return None
+
+                        # ---- Compute ---- 
+                        # Download DEM and preprocess it
+                        self.shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
+                        dem_computed = True
+
+                    
+                    watershed_area = self.shed.compute_watershed_area(coordinate, top_left, bottom_right)
+                    print(f'Watershed area for hstst_id {hstst_id} was calculated')
+
+                    # Save result
+                    dct = {
+                        'hstst_id': int(hstst_id), 
+                        'lat': lat,
+                        'lon': lon,
+                        'watershed_area': watershed_area,
+                        'success': 1
+                    }
+                    df_new = df_new.append(dct, ignore_index=True)
+                    df_new.to_csv(f'{save_path}/{dt_string}_watershed_area.csv', sep=';', decimal=',', index=False)
+                    
+                delf self.shed, dem_computed
                 
-                # ---- Compute path for point ---- 
-                x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
-
-                tif_pathes = []
-                for i in range(y_path):
-                    for j in range(x_path):
-                        lat = str(bottom_right[1] + i)
-                        lon = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
-                        file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 <= 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
-                        tif_pathes.append(f'{DEMs_path}/{file_name}')
-
-                success_list = []
-                for tif_path in tif_pathes:
-                    if path.exists(tif_path) == False:
-                        print(f'{tif_path} is not exist in path {DEMs_path}')
-                        success_list.append(False)
-
-                if len(success_list) != 0:
-                    return None
-
-                # ---- Compute ---- 
-                # Download DEM and preprocess it
-                shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
-
-                watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
-                print(f'Watershed area for hstst_id {hstst_id} was calculated')
+#             for i, row in df.iterrows():
+#                 hstst_id = row[0]
+#                 lat = float(row[1])
+#                 lon = float(row[2])
+#                 top_left = tuple(map(int, row[3].replace('(', '').replace(')', '').split(', ')))
+#                 bottom_right = tuple(map(int, row[4].replace('(', '').replace(')', '').split(', ')))
+#                 compress_coef = row[5]
+#                 coordinate = (lat, lon)
                 
-                # Save result
-                dct = {
-                    'hstst_id': int(hstst_id), 
-                    'lat': lat,
-                    'lon': lon,
-                    'watershed_area': watershed_area,
-                    'success': 1
-                }
-                df_new = df_new.append(dct, ignore_index=True)
-                df_new.to_csv(f'{save_path}/{dt_string}_watershed_area.csv', sep=';', decimal=',', index=False)
+#                 print(f'Processing hstst_id {hstst_id}...')
+                
+#                 # ---- Compute path for point ---- 
+#                 x_path, y_path = bottom_right[0] - top_left[0], top_left[1] - bottom_right[1]
+
+#                 tif_pathes = []
+#                 for i in range(y_path):
+#                     for j in range(x_path):
+#                         lat = str(bottom_right[1] + i)
+#                         lon = ''.join((['0'] + list(str(int(top_left[0] + j))))[-3:])
+#                         file_name = f'n{lat}_e{lon}_1arc_v3.tif' if top_left[1]+1 <= 60 else f'n{lat}_e{lon}_1arc_v3_1201x1201.tif'
+#                         tif_pathes.append(f'{DEMs_path}/{file_name}')
+
+#                 success_list = []
+#                 for tif_path in tif_pathes:
+#                     if path.exists(tif_path) == False:
+#                         print(f'{tif_path} is not exist in path {DEMs_path}')
+#                         success_list.append(False)
+
+#                 if len(success_list) != 0:
+#                     return None
+
+#                 # ---- Compute ---- 
+#                 # Download DEM and preprocess it
+#                 shed = WaterShed.WaterSheds(files_pathes=tif_pathes, compute_acc=True, compression=compress_coef)
+
+#                 watershed_area = shed.compute_watershed_area(coordinate, top_left, bottom_right)
+#                 print(f'Watershed area for hstst_id {hstst_id} was calculated')
+                
+#                 # Save result
+#                 dct = {
+#                     'hstst_id': int(hstst_id), 
+#                     'lat': lat,
+#                     'lon': lon,
+#                     'watershed_area': watershed_area,
+#                     'success': 1
+#                 }
+#                 df_new = df_new.append(dct, ignore_index=True)
+#                 df_new.to_csv(f'{save_path}/{dt_string}_watershed_area.csv', sep=';', decimal=',', index=False)
                 
             
         else:

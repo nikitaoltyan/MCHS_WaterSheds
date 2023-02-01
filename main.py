@@ -547,7 +547,7 @@ class Main():
                     df_new = df_new.append(dct, ignore_index=True)
                     df_new.to_csv(f'{save_path}/{dt_string}_watershed_area.csv', sep=';', decimal=',', index=False)
                     
-                delf self.shed, dem_computed
+                del self.shed, dem_computed
                 
 #             for i, row in df.iterrows():
 #                 hstst_id = row[0]

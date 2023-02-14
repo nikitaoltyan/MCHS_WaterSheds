@@ -21,8 +21,8 @@ import seaborn as sns
 from scipy.stats import mode
 from scipy.ndimage import convolve
 
-from osgeo import gdal
-import ogr, os, osr
+from osgeo import gdal, osr, ogr # Python bindings for GDAL
+
 from glob import glob
 
 import networkx as nx

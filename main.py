@@ -113,6 +113,7 @@ class Main():
                 y, x = up_node[0], up_node[1]
                 new_space_no_interpol[y, x] = 1
 
+            flooded_area = (len(flooded_nodes_down) + len(flooded_nodes_up)) * ((0.03*compression)**2)
             flood_outer = new_space_no_interpol
 
             main_point = point_coord
@@ -195,6 +196,7 @@ class Main():
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
                 'lenth': lenth,
+                'flooded_area': flooded_area,
                 'success': 1
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
@@ -212,6 +214,7 @@ class Main():
                 'wtrdepth': wtrdepth, 
                 'wtrlvltime': wtrlvltime,
                 'lenth': lenth,
+                'flooded_area': 0,
                 'success': 0
             }
             self.df_new = self.df_new.append(dct, ignore_index=True)
@@ -244,6 +247,7 @@ class Main():
                                                  'wtrdepth': 'float64', 
                                                  'wtrlvltime': 'float64',
                                                  'lenth': 'int64',
+                                                 'flooded_area': 'float64',
                                                  'success': 'int64'})
     
         # For future save

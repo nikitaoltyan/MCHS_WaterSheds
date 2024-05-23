@@ -406,7 +406,152 @@ class Graph():
         self.h = flood_area_dem[new_y, new_x] + target_h
         return flood_area_acc.shape, flooded_nodes_down, flooded_nodes_up, all_out_nodes, flood_area_dem, self.h, point, lenth_with_offset
 
-    
+
+    # New function - supports calculating flood as water increase level instead of bool value
+    def compute_flood_with_height(self, coordinate, top_left, bottom_right, lenth, target_h, uniform_flooding=False):
+        point = self.coordinate2point(coordinate, top_left, bottom_right)
+        y, x = point[0], point[1]
+        lenth_with_offset = int(lenth / (self.point_size_meteres * self.compression) + 40)  # For offset
+        flood_area_fdir = self.fdir[y - lenth_with_offset:y + lenth_with_offset,
+                          x - lenth_with_offset:x + lenth_with_offset]
+        flood_area_dem = self.dem[y - lenth_with_offset:y + lenth_with_offset,
+                         x - lenth_with_offset:x + lenth_with_offset]
+        flood_area_acc = self.acc.copy()
+        flood_area_acc = flood_area_acc[y - lenth_with_offset:y + lenth_with_offset,
+                         x - lenth_with_offset:x + lenth_with_offset]
+        new_x, new_y = lenth_with_offset, lenth_with_offset
+        new_point = (new_y, new_x)
+
+        # Create temporary acc graph
+        self.create_acc_graph(flood_area_acc, flood_area_fdir, 200)
+
+        # Get river pathes
+        river_pathes_nodes_DOWN, river_pathes_nodes_UP, _, success = self.compute_river_path(new_point, lenth)
+
+        # Graph for specified area
+        self.G = nx.DiGraph()
+        shape = flood_area_fdir.shape
+
+        for row in range(1, shape[0] - 1):
+            for column in range(1, shape[1] - 1):
+                dir = flood_area_fdir[row, column]
+                start = (row, column)
+                target = self.fdir_coordinate(start, dir)
+                self.G.add_edge(start, target)
+
+        # Make flood
+        if uniform_flooding == False:
+            self.h = flood_area_dem[new_y, new_x] + target_h
+
+        flooded_nodes_down = []
+        flooded_nodes_down_height = []
+        all_out_nodes = []  # For both up and down
+        for i, node in enumerate(river_pathes_nodes_DOWN[::-1]):  # Начинаем с последней затопленной клетки
+            if uniform_flooding:
+                self.h = flood_area_dem[node[0], node[1]] + target_h
+
+            all_nodes = [node]
+            all_nodes_height = [self.h - flood_area_dem[node[0], node[1]]]
+            nodes = [node]
+            out_nodes_log = []
+
+            while len(nodes) > 0:
+                node_ = nodes[0]
+                if node_ == river_pathes_nodes_DOWN[0]:
+                    nodes.pop(0)
+                    break
+
+                nodes.pop(0)
+                in_nodes = self.in_nodes(node_)
+                # print(node, in_nodes)
+                if len(in_nodes) == 0:
+                    break
+
+                intersection = set(river_pathes_nodes_DOWN).intersection(set(in_nodes))
+                if len(intersection) > 0:
+                    in_nodes.remove(
+                        list(intersection)[0])  # Удаление участков реки ниже. Чтобы обрабатывать только области у рек.
+
+                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= self.h]
+
+                all_nodes += in_nodes_
+                all_nodes_height += [self.h - flood_area_dem[node[0], node[1]] for node in in_nodes_]
+                nodes.append(in_nodes_)
+
+                # adding in-edge parts
+                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > self.h]
+
+                for out_node in out_nodes:
+                    start, end = out_node, self.out_node_G(out_node)
+                    start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
+                    height_rise = abs(end_height - self.h)
+                    height_difference = abs(start_height - end_height)
+                    meter_path = height_difference / self.point_size_meteres
+                    point_path = round(height_rise / meter_path,
+                                       0)  # * out of self.point_size_meteres (in meteres). From end (lower) to upper.
+                    out_nodes_log.append((out_node, end, point_path))
+
+            if len(all_nodes) == 0:
+                continue
+            flooded_nodes_down += all_nodes
+            flooded_nodes_down_height += all_nodes_height
+            all_out_nodes += out_nodes_log
+
+        flooded_nodes_up = []
+        flooded_nodes_up_height = []
+        for i, node in enumerate(river_pathes_nodes_UP):  # Начинаем с первой клетки
+            if uniform_flooding:
+                self.h = flood_area_dem[node[0], node[1]] + target_h
+
+            all_nodes = [node]
+            all_nodes_height = [self.h - flood_area_dem[node[0], node[1]]]
+            nodes = [node]
+            out_nodes_log = []
+
+            while len(nodes) > 0:
+                node_ = nodes[0]
+                if node_ == river_pathes_nodes_UP[-1]:
+                    nodes.pop(0)
+                    break
+
+                nodes.pop(0)
+                in_nodes = self.in_nodes(node_)
+                if len(in_nodes) == 0:
+                    break
+
+                intersection = set(river_pathes_nodes_UP).intersection(set(in_nodes))
+                if len(intersection) > 0:
+                    in_nodes.remove(
+                        list(intersection)[0])  # Удаление участков реки ниже. Чтобы обрабатывать только области у рек.
+
+                in_nodes_ = [node for node in in_nodes if flood_area_dem[node[0], node[1]] <= self.h]
+
+                all_nodes += in_nodes_
+                all_nodes_height += [self.h - flood_area_dem[node[0], node[1]] for node in in_nodes_]
+                nodes.append(in_nodes_)
+
+                # adding in-edge parts
+                out_nodes = [node for node in in_nodes if flood_area_dem[node[0], node[1]] > self.h]
+
+                for out_node in out_nodes:
+                    start, end = out_node, self.out_node_G(out_node)
+                    start_height, end_height = flood_area_dem[start[0], start[1]], flood_area_dem[end[0], end[1]]
+                    height_rise = abs(end_height - self.h)
+                    height_difference = abs(start_height - end_height)
+                    meter_path = height_difference / self.point_size_meteres
+                    point_path = round(height_rise / meter_path,
+                                       0)  # * out of self.point_size_meteres (in meteres). From end (lower) to upper.
+                    out_nodes_log.append((out_node, end, point_path))
+
+            if len(all_nodes) == 0:
+                continue
+            flooded_nodes_up += all_nodes
+            flooded_nodes_up_height += all_nodes_height
+            all_out_nodes += out_nodes_log
+
+        self.h = flood_area_dem[new_y, new_x] + target_h
+        return flood_area_acc.shape, flooded_nodes_down, flooded_nodes_down_height, flooded_nodes_up, flooded_nodes_up_height, all_out_nodes, flood_area_dem, self.h, point, lenth_with_offset
+
     def get_step(self, y_delta, x_delta):
         """
         Calculate step for future river slice
